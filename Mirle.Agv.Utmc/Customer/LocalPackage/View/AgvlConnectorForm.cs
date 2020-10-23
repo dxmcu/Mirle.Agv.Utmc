@@ -15,7 +15,7 @@ using System.Reflection;
 
 namespace Mirle.Agv.Utmc.View
 {
-  public partial class AgvlConnectorForm : Form
+  public partial class LocalPackageForm : Form
   {
     public string PspLogMsg { get; set; } = "";
     private LocalPackage asePackage;
@@ -25,7 +25,7 @@ namespace Mirle.Agv.Utmc.View
     private string deviceID = Vehicle.Instance.AgvcConnectorConfig.ClientName;
     public MapInfo MapInfo { get; set; }
 
-    public AgvlConnectorForm(LocalPackage asePackage, MapInfo mapInfo)
+    public LocalPackageForm(LocalPackage asePackage, MapInfo mapInfo)
     {
       InitializeComponent();
       this.asePackage = asePackage;
@@ -48,7 +48,7 @@ namespace Mirle.Agv.Utmc.View
 
     private void InitialUcWatchSocIntervalMs()
     {
-      ucWatchSocIntervalMs.TagValue = Vehicle.AseBatteryConfig.WatchBatteryStateInterval.ToString();
+      ucWatchSocIntervalMs.TagValue = Vehicle.LocalPackageBatteryConfig.WatchBatteryStateInterval.ToString();
     }
 
     private void InitialBoxChargeDirection()
@@ -89,7 +89,7 @@ namespace Mirle.Agv.Utmc.View
 
     private void InitialUcAskPositionIntervalMs()
     {
-      ucAskPositionInterval.TagValue = Vehicle.AseMoveConfig.WatchPositionInterval.ToString();
+      ucAskPositionInterval.TagValue = Vehicle.MoveConfig.WatchPositionInterval.ToString();
     }
 
     private void InitialBoxKeepOrGo()
@@ -114,13 +114,13 @@ namespace Mirle.Agv.Utmc.View
     {
       try
       {
-        var localConfig = Vehicle.PspConnectionConfig;
-        ucIp.TagValue = localConfig.Ip;
-        ucPort.TagValue = localConfig.Port.ToString();
-        ucIsServer.TagValue = localConfig.IsServer ? "Server" : "Client";
-        ucT3Timeout.TagValue = localConfig.T3Timeout.ToString();
-        ucT6Timeout.TagValue = localConfig.T6Timeout.ToString();
-        ucLinkTestIntervalMs.TagValue = localConfig.LinkTestIntervalMs.ToString();
+        //var localConfig = Vehicle.PspConnectionConfig;
+        //ucIp.TagValue = localConfig.Ip;
+        //ucPort.TagValue = localConfig.Port.ToString();
+        //ucIsServer.TagValue = localConfig.IsServer ? "Server" : "Client";
+        //ucT3Timeout.TagValue = localConfig.T3Timeout.ToString();
+        //ucT6Timeout.TagValue = localConfig.T6Timeout.ToString();
+        //ucLinkTestIntervalMs.TagValue = localConfig.LinkTestIntervalMs.ToString();
       }
       catch (Exception ex)
       {

@@ -72,17 +72,12 @@ namespace Mirle.Agv.Utmc.View
                     break;
 
                 //AsePackage Config
-                case "PspConnectionConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.PspConnectionConfig, Formatting.Indented);                   
-                    break;
-                case "AsePackageConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.AsePackageConfig, Formatting.Indented);
-                    break;
-                case "AseMoveConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.AseMoveConfig, Formatting.Indented);
+                
+                case "MoveConfig":
+                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.MoveConfig, Formatting.Indented);
                     break;
                 case "AseBatteryConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.AseBatteryConfig, Formatting.Indented);
+                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.LocalPackageBatteryConfig, Formatting.Indented);
                     break;
                 default:
                     break;
@@ -108,17 +103,11 @@ namespace Mirle.Agv.Utmc.View
                         break;
 
                     //AsePackage Config
-                    case "PspConnectionConfig":
-                        Vehicle.PspConnectionConfig = JsonConvert.DeserializeObject<PspConnectionConfig>(txtJsonStringConfig.Text);
+                    case "MoveConfig":
+                        Vehicle.MoveConfig = JsonConvert.DeserializeObject<MoveConfig>(txtJsonStringConfig.Text);
                         break;
-                    case "AsePackageConfig":
-                        Vehicle.AsePackageConfig = JsonConvert.DeserializeObject<AsePackageConfig>(txtJsonStringConfig.Text);
-                        break;
-                    case "AseMoveConfig":
-                        Vehicle.AseMoveConfig = JsonConvert.DeserializeObject<AseMoveConfig>(txtJsonStringConfig.Text);
-                        break;
-                    case "AseBatteryConfig":
-                        Vehicle.AseBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(txtJsonStringConfig.Text);
+                    case "LocalPackageBatteryConfig":
+                        Vehicle.LocalPackageBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(txtJsonStringConfig.Text);
                         break;
 
                     default:

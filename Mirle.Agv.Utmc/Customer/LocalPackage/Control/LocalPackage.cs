@@ -20,13 +20,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         public Dictionary<string, PSMessageXClass> psMessageMap = new Dictionary<string, PSMessageXClass>();
         public string LocalLogMsg { get; set; } = "";
-        public string MoveStopResult { get; set; } = "";
         public RobotCommand RobotCommand { get; set; }
-        public DateTime LastDisconnectedTimeStamp { get; set; } = DateTime.Now;
-        public long LastUpdateLeftSlotStatusSystemByte { get; set; } = 0;
-        public long LastUpdateRightSlotStatusSystemByte { get; set; } = 0;
-        public long LastUpdatePositionSystemByte { get; set; } = 0;
-        public bool ResetSystemByte { get; set; } = true;
 
         private Thread thdWatchPosition;
         public bool IsWatchPositionPause { get; private set; } = false;
@@ -34,12 +28,8 @@ namespace Mirle.Agv.Utmc.Controller
         private Thread thdWatchBatteryState;
         public bool IsWatchBatteryStatusPause { get; private set; } = false;
 
-        public ConcurrentQueue<PSMessageXClass> PrimarySendQueue { get; set; } = new ConcurrentQueue<PSMessageXClass>();
         public ConcurrentQueue<PSTransactionXClass> SecondarySendQueue { get; set; } = new ConcurrentQueue<PSTransactionXClass>();
-        public ConcurrentQueue<PSTransactionXClass> PrimaryReceiveQueue { get; set; } = new ConcurrentQueue<PSTransactionXClass>();
-        public ConcurrentQueue<PSTransactionXClass> SecondaryReceiveQueue { get; set; } = new ConcurrentQueue<PSTransactionXClass>();
         public ConcurrentQueue<PositionArgs> ReceivePositionArgsQueue { get; set; } = new ConcurrentQueue<PositionArgs>();
-        public ConcurrentQueue<PSMessageXClass> PrimaryTimeoutQueue { get; set; } = new ConcurrentQueue<PSMessageXClass>();
 
         public event EventHandler<string> ImportantPspLog;
         public event EventHandler<string> OnStatusChangeReportEvent;
@@ -55,7 +45,6 @@ namespace Mirle.Agv.Utmc.Controller
         {
             InitialThreads();
         }
-
         private void InitialThreads()
         {
             thdWatchPosition = new Thread(WatchPosition);
@@ -76,7 +65,7 @@ namespace Mirle.Agv.Utmc.Controller
                 {
                     if (IsWatchPositionPause)
                     {
-                        SpinWait.SpinUntil(() => !IsWatchPositionPause, Vehicle.AseMoveConfig.WatchPositionInterval);
+                        SpinWait.SpinUntil(() => !IsWatchPositionPause, Vehicle.MoveConfig.WatchPositionInterval);
                         continue;
                     }
 
@@ -94,7 +83,7 @@ namespace Mirle.Agv.Utmc.Controller
                     LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
                 }
 
-                SpinWait.SpinUntil(() => false, Vehicle.AseMoveConfig.WatchPositionInterval);
+                SpinWait.SpinUntil(() => false, Vehicle.MoveConfig.WatchPositionInterval);
             }
         }
         public void SendPositionReportRequest()
@@ -124,12 +113,12 @@ namespace Mirle.Agv.Utmc.Controller
                 if (Vehicle.IsCharging)
                 {
                     //Thread.Sleep(Vehicle.AseBatteryConfig.WatchBatteryStateIntervalInCharging);
-                    SpinWait.SpinUntil(() => false, Vehicle.AseBatteryConfig.WatchBatteryStateIntervalInCharging);
+                    SpinWait.SpinUntil(() => false, Vehicle.LocalPackageBatteryConfig.WatchBatteryStateIntervalInCharging);
                 }
                 else
                 {
                     //Thread.Sleep(Vehicle.AseBatteryConfig.WatchBatteryStateInterval);
-                    SpinWait.SpinUntil(() => false, Vehicle.AseBatteryConfig.WatchBatteryStateInterval);
+                    SpinWait.SpinUntil(() => false, Vehicle.LocalPackageBatteryConfig.WatchBatteryStateInterval);
                 }
             }
         }
@@ -565,16 +554,16 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 bool isAlarmSet = psMessage.Substring(0, 1) == "1";
-                int alarmCode = int.Parse(psMessage.Substring(1, Vehicle.AsePackageConfig.ErrorCodeLength));                
+                //int alarmCode = int.Parse(psMessage.Substring(1, Vehicle.AsePackageConfig.ErrorCodeLength));                
 
-                if (isAlarmSet)
-                {
-                    OnAlarmCodeSetEvent?.Invoke(this, alarmCode);
-                }
-                else
-                {
-                    OnAlarmCodeResetEvent?.Invoke(this, alarmCode);
-                }
+                //if (isAlarmSet)
+                //{
+                //    OnAlarmCodeSetEvent?.Invoke(this, alarmCode);
+                //}
+                //else
+                //{
+                //    OnAlarmCodeResetEvent?.Invoke(this, alarmCode);
+                //}
             }
             catch (Exception ex)
             {
@@ -609,134 +598,47 @@ namespace Mirle.Agv.Utmc.Controller
         private void UpdateCarrierSlotStatus(string psMessage, uint systemByte)
         {
             EnumSlotNumber slotNumber = EnumSlotNumber.L;
-            CarrierSlotStatus aseCarrierSlotStatus = new CarrierSlotStatus();
+            CarrierSlotStatus carrierSlotStatus = new CarrierSlotStatus();
 
             try
             {
                 slotNumber = psMessage.Substring(1, 1) == "L" ? EnumSlotNumber.L : EnumSlotNumber.R;
-                if (!CheckSlotSystemByte(slotNumber, systemByte))//200827 dabid+ Log
-                {
-                    LogPsWrapper($"dabid Log {slotNumber.ToString()} systemByte :{systemByte.ToString()} is old. psMessage : {psMessage}");
-                    return;
-                }
 
-                aseCarrierSlotStatus.SlotNumber = slotNumber;
+                carrierSlotStatus.SlotNumber = slotNumber;
 
                 bool manualDeleteCst = psMessage.Substring(0, 1) == "1";
-                aseCarrierSlotStatus.ManualDeleteCST = manualDeleteCst;
+                carrierSlotStatus.ManualDeleteCST = manualDeleteCst;
                 if (manualDeleteCst)
                 {
-                    OnUpdateSlotStatusEvent?.Invoke(this, aseCarrierSlotStatus);
+                    OnUpdateSlotStatusEvent?.Invoke(this, carrierSlotStatus);
                     return;
                 }
 
-                aseCarrierSlotStatus.EnumCarrierSlotState = GetCarrierSlotStatus(psMessage.Substring(2, 1));
-                aseCarrierSlotStatus.CarrierId = psMessage.Substring(3);
-                if (aseCarrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
+                carrierSlotStatus.EnumCarrierSlotState = GetCarrierSlotStatus(psMessage.Substring(2, 1));
+                carrierSlotStatus.CarrierId = psMessage.Substring(3);
+                if (carrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
                 {
-                    if (string.IsNullOrEmpty(aseCarrierSlotStatus.CarrierId.Trim()))
+                    if (string.IsNullOrEmpty(carrierSlotStatus.CarrierId.Trim()))
                     {
-                        aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
+                        carrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
                     }
-                    else if (aseCarrierSlotStatus.CarrierId == "ReadIdFail")
+                    else if (carrierSlotStatus.CarrierId == "ReadIdFail")
                     {
-                        aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
+                        carrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
                     }
-                    else if (aseCarrierSlotStatus.CarrierId == "PositionError")
+                    else if (carrierSlotStatus.CarrierId == "PositionError")
                     {
-                        aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.PositionError;
+                        carrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.PositionError;
                     }
                 }
 
-                OnUpdateSlotStatusEvent?.Invoke(this, aseCarrierSlotStatus);
+                OnUpdateSlotStatusEvent?.Invoke(this, carrierSlotStatus);
             }
             catch (Exception ex)
             {
                 string msg = "Carrier Slot Report, " + ex.Message;
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
                 ImportantPspLog?.Invoke(this, msg);
-            }
-        }
-
-        private bool CheckSlotSystemByte(EnumSlotNumber slotNumber, uint systemByte)
-        {
-            long thd = 100;//Vehicle.AsePackageConfig.MaxLocalSystemByte / 4;
-            if (slotNumber == EnumSlotNumber.L)
-            {
-                long longSystemByte = (long)systemByte;
-                if (longSystemByte > LastUpdateLeftSlotStatusSystemByte)
-                {
-                    //200904 dabid+ SlotStatusSystemByte最新已經是輪一圈歸0後的值，如果longSystemByte的值落在SystemByte回推thd以內就當是舊資料
-                    //---L------------------------------S
-                    if (LastUpdateLeftSlotStatusSystemByte < thd)
-                    {
-                        if (longSystemByte > (Vehicle.AsePackageConfig.MaxLocalSystemByte - (thd - LastUpdateLeftSlotStatusSystemByte)))
-                        {
-                            LogPsWrapper($"dabid Log {slotNumber.ToString()} - CurSlotSystemByte {LastUpdateLeftSlotStatusSystemByte.ToString()}");
-                            return false;
-                        }
-                    }
-                    //---L---S--------------------------
-                    LastUpdateLeftSlotStatusSystemByte = longSystemByte;
-                    LogPsWrapper($"dabid Log LastUpdateLeftSlotStatusSystemByte {LastUpdateLeftSlotStatusSystemByte.ToString()}");
-                    return true;
-                }
-                else if (longSystemByte < LastUpdateLeftSlotStatusSystemByte)
-                {
-
-                    if (LastUpdateLeftSlotStatusSystemByte - longSystemByte > thd)
-                    {
-                        LastUpdateLeftSlotStatusSystemByte = longSystemByte;
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                long longSystemByte = (long)systemByte;
-
-                if (longSystemByte > LastUpdateRightSlotStatusSystemByte)
-                {
-                    //200904 dabid+ SlotStatusSystemByte最新已經是輪一圈歸0後的值，如果longSystemByte的值落在SystemByte回推thd以內就當是舊資料
-                    //---L------------------------------S
-                    if (LastUpdateRightSlotStatusSystemByte < thd)
-                    {
-                        if (longSystemByte > (Vehicle.AsePackageConfig.MaxLocalSystemByte - (thd - LastUpdateRightSlotStatusSystemByte)))
-                        {
-                            LogPsWrapper($"dabid Log {slotNumber.ToString()} - CurSlotSystemByte {LastUpdateRightSlotStatusSystemByte.ToString()}");
-                            return false;
-                        }
-                    }
-                    //---L---S--------------------------
-                    LastUpdateRightSlotStatusSystemByte = longSystemByte;
-                    LogPsWrapper($"dabid Log LastUpdateRightSlotStatusSystemByte {LastUpdateRightSlotStatusSystemByte.ToString()}");
-                    return true;
-                }
-                else if (longSystemByte < LastUpdateRightSlotStatusSystemByte)
-                {
-
-                    if (LastUpdateRightSlotStatusSystemByte - longSystemByte > thd)
-                    {
-                        LastUpdateRightSlotStatusSystemByte = longSystemByte;
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
             }
         }
 

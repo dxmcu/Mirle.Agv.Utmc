@@ -63,8 +63,6 @@ namespace Mirle.Agv.Utmc.Controller
         public int InitialSoc { get; set; } = 70;
         public bool IsFirstAhGet { get; set; }
         public string CanAutoMsg { get; set; } = "";
-        public DateTime StartChargeTimeStamp { get; set; } = DateTime.Now;
-        public DateTime StopChargeTimeStamp { get; set; } = DateTime.Now;
         public bool WaitingTransferCompleteEnd { get; set; } = false;
         public string DebugLogMsg { get; set; } = "";
         public LastIdlePosition LastIdlePosition { get; set; } = new LastIdlePosition();
@@ -132,29 +130,17 @@ namespace Mirle.Agv.Utmc.Controller
                 Vehicle.BatteryLog = JsonConvert.DeserializeObject<BatteryLog>(allText);
                 InitialSoc = Vehicle.BatteryLog.InitialSoc;
 
-                //AsePackage Configs
-                allText = System.IO.File.ReadAllText("AsePackageConfig.json");
-                Vehicle.AsePackageConfig = JsonConvert.DeserializeObject<AsePackageConfig>(allText);
-                Vehicle.AsePackageConfig.ScheduleIntervalMs = Math.Max(Vehicle.AsePackageConfig.ScheduleIntervalMs, minThreadSleep);
-                Vehicle.AsePackageConfig.WatchWifiSignalIntervalMs = Math.Max(Vehicle.AsePackageConfig.WatchWifiSignalIntervalMs, minThreadSleep);
-                Vehicle.AseMoveConfig.WatchPositionInterval = Math.Max(Vehicle.AseMoveConfig.WatchPositionInterval, minThreadSleep);
-                Vehicle.AseBatteryConfig.WatchBatteryStateIntervalInCharging = Math.Max(Vehicle.AseBatteryConfig.WatchBatteryStateIntervalInCharging, minThreadSleep);
-                Vehicle.AseBatteryConfig.WatchBatteryStateInterval = Math.Max(Vehicle.AseBatteryConfig.WatchBatteryStateInterval, minThreadSleep);
-
-                allText = System.IO.File.ReadAllText("PspConnectionConfig.json");
-                Vehicle.PspConnectionConfig = JsonConvert.DeserializeObject<PspConnectionConfig>(allText);
-
-                allText = System.IO.File.ReadAllText("AseBatteryConfig.json");
-                Vehicle.AseBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(allText);
+                allText = System.IO.File.ReadAllText("BatteryConfig.json");
+                Vehicle.LocalPackageBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(allText);
 
                 allText = System.IO.File.ReadAllText("AseMoveConfig.json");
-                Vehicle.AseMoveConfig = JsonConvert.DeserializeObject<AseMoveConfig>(allText);
+                Vehicle.MoveConfig = JsonConvert.DeserializeObject<MoveConfig>(allText);
 
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
-                    Vehicle.AseBatteryConfig.WatchBatteryStateInterval = 30 * 1000;
-                    Vehicle.AseBatteryConfig.WatchBatteryStateIntervalInCharging = 30 * 1000;
-                    Vehicle.AseMoveConfig.WatchPositionInterval = 5000;
+                    Vehicle.LocalPackageBatteryConfig.WatchBatteryStateInterval = 30 * 1000;
+                    Vehicle.LocalPackageBatteryConfig.WatchBatteryStateIntervalInCharging = 30 * 1000;
+                    Vehicle.MoveConfig.WatchPositionInterval = 5000;
                 }
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "讀寫設定檔"));

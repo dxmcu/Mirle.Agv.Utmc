@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Model.Configs
 {
-    public class AseMoveConfig
+    public class MoveConfig
     {
         public int WatchPositionInterval { get; set; } = 1000;
     }

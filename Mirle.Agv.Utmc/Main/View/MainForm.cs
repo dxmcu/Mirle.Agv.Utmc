@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
+using Mirle.Agv.UserControls;
 
 namespace Mirle.Agv.Utmc.View
 {
@@ -22,12 +23,12 @@ namespace Mirle.Agv.Utmc.View
     {
         public MainFlowHandler mainFlowHandler;
         public MainForm mainForm;
-        private LocalPackage asePackage;
+        private LocalPackage localPackage;
         private AgvcConnector agvcConnector;
         private AgvcConnectorForm agvcConnectorForm;
         private AlarmForm alarmForm;
         private AlarmHandler alarmHandler;
-        private AgvlConnectorForm AgvlConnectorForm;
+        private LocalPackageForm LocalPackageForm;
         private WarningForm warningForm;
         private ConfigForm configForm;
         private LoginForm loginForm;
@@ -69,7 +70,7 @@ namespace Mirle.Agv.Utmc.View
             InitializeComponent();
             this.mainFlowHandler = mainFlowHandler;
             alarmHandler = mainFlowHandler.alarmHandler;
-            asePackage = mainFlowHandler.localPackage;
+            localPackage = mainFlowHandler.localPackage;
             agvcConnector = mainFlowHandler.agvcConnector;
             mainForm = this;
         }
@@ -81,9 +82,9 @@ namespace Mirle.Agv.Utmc.View
             InitialPanels();
             ResetImageAndPb();
             InitialSoc();
-            asePackage.AllAgvlStatusReportRequest();
-            asePackage.SendPositionReportRequest();
-            asePackage.SendBatteryStatusRequest();
+            localPackage.AllAgvlStatusReportRequest();
+            localPackage.SendPositionReportRequest();
+            localPackage.SendBatteryStatusRequest();
             InitialConnectionAndCarrierStatus();
             InitialDisableSlotCheckBox();
             btnKeyInPosition.Visible = Vehicle.MainFlowConfig.IsSimulation;
@@ -163,7 +164,7 @@ namespace Mirle.Agv.Utmc.View
             numPositionX.Maximum = decimal.MaxValue;
             numPositionY.Maximum = decimal.MaxValue;
 
-            InitialAseAgvlConnectorForm();
+            InitialLocalPackageForm();
             InitialLoginForm();
 
         }
@@ -245,7 +246,7 @@ namespace Mirle.Agv.Utmc.View
 
                     MapPosition sectionLocation = new MapPosition(Math.Min(headPos.X, tailPos.X), Math.Max(headPos.Y, tailPos.Y));//200310 dabid#
 
-                    UcSectionImage ucSectionImage = new UcSectionImage(Vehicle.Mapinfo, section);
+                    UcSectionImage ucSectionImage = new UcSectionImage(GetUcSection(section));
                     if (!allUcSectionImages.ContainsKey(section.Id))
                     {
                         allUcSectionImages.Add(section.Id, ucSectionImage);
@@ -257,7 +258,7 @@ namespace Mirle.Agv.Utmc.View
                         case EnumSectionType.Horizontal:
                             break;
                         case EnumSectionType.Vertical:
-                            ucSectionImage.Location = new Point(ucSectionImage.Location.X - (ucSectionImage.labelSize.Width / 2 + 5), ucSectionImage.Location.Y);
+                            ucSectionImage.Location = new Point(ucSectionImage.Location.X - (ucSectionImage.label1.Width / 2 + 5), ucSectionImage.Location.Y);
                             break;
                         case EnumSectionType.R2000:
                         case EnumSectionType.None:
@@ -278,7 +279,7 @@ namespace Mirle.Agv.Utmc.View
                 var addressMap = Vehicle.Mapinfo.addressMap.Values.ToList();
                 foreach (var address in addressMap)
                 {
-                    UcAddressImage ucAddressImage = new UcAddressImage(Vehicle.Mapinfo, address);
+                    UcAddressImage ucAddressImage = new UcAddressImage(GetUcAddress(address));
                     if (!allUcAddressImages.ContainsKey(address.Id))
                     {
                         allUcAddressImages.Add(address.Id, ucAddressImage);
@@ -308,6 +309,38 @@ namespace Mirle.Agv.Utmc.View
             {
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
+        }
+
+        private UcSection GetUcSection(MapSection section)
+        {
+            return new UcSection() { Id = section.Id, HeadAddress = GetUcAddress(section.HeadAddress), TailAddress = GetUcAddress(section.TailAddress), SectionType = GetUcSectionType(section.Type) };
+        }
+
+        private EnumUcSectionType GetUcSectionType(EnumSectionType sectionType)
+        {
+            switch (sectionType)
+            {
+                case EnumSectionType.None:
+                    return EnumUcSectionType.None;
+                case EnumSectionType.Horizontal:
+                    return EnumUcSectionType.Horizontal;
+                case EnumSectionType.Vertical:
+                    return EnumUcSectionType.Vertical;
+                case EnumSectionType.R2000:
+                    return EnumUcSectionType.R2000;
+                default:
+                    return EnumUcSectionType.None;
+            }
+        }
+
+        private UcAddress GetUcAddress(MapAddress address)
+        {
+            return new UcAddress() { Id = address.Id, Position = GetUcPosition(address.Position), IsCharger = address.IsCharger(), IsSegmentPoint = address.IsSegmentPoint(), IsWorkStation = address.IsTransferPort() };
+        }
+
+        private UcPosition GetUcPosition(MapPosition position)
+        {
+            return new UcPosition() { X = position.X, Y = position.Y };
         }
 
         private void SetupImageRegion()
@@ -376,7 +409,7 @@ namespace Mirle.Agv.Utmc.View
         {
             Control control = ((Control)sender).Parent;
             UcAddressImage ucAddressImage = (UcAddressImage)control;
-            mouseDownPbPoint = MapPixelExchange(ucAddressImage.Address.Position);
+            mouseDownPbPoint = MapPixelExchange(GetMapPosition(ucAddressImage.Address.Position));
             mouseDownScreenPoint = ((Control)sender).PointToScreen(new Point(e.X, e.Y));
             SetpupVehicleLocation();
         }
@@ -385,9 +418,14 @@ namespace Mirle.Agv.Utmc.View
         {
             Control control = (Control)sender;
             UcAddressImage ucAddressImage = (UcAddressImage)control;
-            mouseDownPbPoint = MapPixelExchange(ucAddressImage.Address.Position);
+            mouseDownPbPoint = MapPixelExchange(GetMapPosition(ucAddressImage.Address.Position));
             mouseDownScreenPoint = ((Control)sender).PointToScreen(new Point(e.X, e.Y));
             SetpupVehicleLocation();
+        }
+
+        private MapPosition GetMapPosition(UcPosition position)
+        {
+            return new MapPosition() { X = position.X, Y = position.Y };
         }
 
         private void UcSectionImageItem_MouseDown(object sender, MouseEventArgs e)
@@ -424,20 +462,20 @@ namespace Mirle.Agv.Utmc.View
 
         private void AgvlConnectorPage_Click(object sender, EventArgs e)
         {
-            if (AgvlConnectorForm.IsDisposed)
-            {
-                InitialAseAgvlConnectorForm();
-            }
-            if (AgvlConnectorForm != null)
-            {
-                AgvlConnectorForm.BringToFront();
-                AgvlConnectorForm.Show();
-            }
+            //if (AgvlConnectorForm.IsDisposed)
+            //{
+            //    InitialAseAgvlConnectorForm();
+            //}
+            //if (AgvlConnectorForm != null)
+            //{
+            //    AgvlConnectorForm.BringToFront();
+            //    AgvlConnectorForm.Show();
+            //}
         }
 
-        private void InitialAseAgvlConnectorForm()
+        private void InitialLocalPackageForm()
         {
-            AgvlConnectorForm = new AgvlConnectorForm(asePackage, Vehicle.Mapinfo);
+            //AgvlConnectorForm = new AgvlConnectorForm(localPackage, Vehicle.Mapinfo);
         }
 
         private void AgvcConnectorPage_Click(object sender, EventArgs e)
@@ -454,11 +492,11 @@ namespace Mirle.Agv.Utmc.View
         private void btnRefreshStatus_Click(object sender, EventArgs e)
         {
             btnRefreshStatus.Enabled = false;
-            asePackage.AllAgvlStatusReportRequest();
+            localPackage.AllAgvlStatusReportRequest();
             SpinWait.SpinUntil(() => false, 50);
-            asePackage.SendPositionReportRequest();
+            localPackage.SendPositionReportRequest();
             SpinWait.SpinUntil(() => false, 50);
-            asePackage.SendBatteryStatusRequest();
+            localPackage.SendBatteryStatusRequest();
             btnRefreshStatus.Enabled = true;
         }
 
@@ -466,11 +504,11 @@ namespace Mirle.Agv.Utmc.View
         {
             btnRefreshMoveState.Enabled = false;
 
-            asePackage.SendPositionReportRequest();
+            localPackage.SendPositionReportRequest();
 
             SpinWait.SpinUntil(() => false, 50);
 
-            asePackage.RefreshMoveState();
+            localPackage.RefreshMoveState();
 
             btnRefreshMoveState.Enabled = true;
         }
@@ -481,11 +519,11 @@ namespace Mirle.Agv.Utmc.View
             {
                 btnRefreshRobotState.Enabled = false;
 
-                asePackage.RefreshRobotState();
+                localPackage.RefreshRobotState();
 
                 SpinWait.SpinUntil(() => false, 50);
 
-                asePackage.RefreshCarrierSlotState();
+                localPackage.RefreshCarrierSlotState();
 
                 btnRefreshRobotState.Enabled = true;
             }
@@ -501,7 +539,7 @@ namespace Mirle.Agv.Utmc.View
             {
                 var btn = sender as Button;
                 btn.Enabled = false;
-                asePackage.AllAgvlStatusReportRequest();
+                localPackage.AllAgvlStatusReportRequest();
                 System.Threading.Thread.Sleep(50);
                 btn.Enabled = true;
             }
@@ -1456,7 +1494,7 @@ namespace Mirle.Agv.Utmc.View
                     EnumLocalArrival = EnumLocalArrival.Arrival,
                     MapPosition = new MapPosition(posX, posY)
                 };
-                asePackage.ReceivePositionArgsQueue.Enqueue(positionArgs);
+                localPackage.ReceivePositionArgsQueue.Enqueue(positionArgs);
             }
             catch (Exception ex)
             {

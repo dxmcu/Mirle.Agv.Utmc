@@ -1,6 +1,6 @@
 ﻿namespace Mirle.Agv.Utmc.View
 {
-    partial class AgvlConnectorForm
+    partial class LocalPackageForm
     {
         /// <summary>
         /// Required designer variable.

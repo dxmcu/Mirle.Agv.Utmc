@@ -81,10 +81,8 @@ namespace Mirle.Agv.Utmc.Model
 
         // AsePackage Configs
 
-        public AsePackageConfig AsePackageConfig { get; set; } = new AsePackageConfig();
-        public LocalPackageBatteryConfig AseBatteryConfig { get; set; } = new LocalPackageBatteryConfig();
-        public AseMoveConfig AseMoveConfig { get; set; } = new AseMoveConfig();
-        public PspConnectionConfig PspConnectionConfig { get; set; } = new PspConnectionConfig();
+        public LocalPackageBatteryConfig LocalPackageBatteryConfig { get; set; } = new LocalPackageBatteryConfig();
+        public MoveConfig MoveConfig { get; set; } = new MoveConfig();
 
         #endregion
 

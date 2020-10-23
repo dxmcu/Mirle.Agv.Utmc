@@ -57,7 +57,7 @@ namespace Mirle.Agv.Utmc.Model
         public int MyDistance(MapPosition targetPosition)
         {
             return Position.MyDistance(targetPosition);
-        }
+        }       
     }
 
 }
