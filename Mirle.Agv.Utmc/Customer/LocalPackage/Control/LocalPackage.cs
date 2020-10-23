@@ -49,7 +49,6 @@ namespace Mirle.Agv.Utmc.Controller
         public event EventHandler<int> OnAlarmCodeResetEvent;
         public event EventHandler OnAlarmCodeAllResetEvent;
         public event EventHandler<double> OnBatteryPercentageChangeEvent;
-        public event EventHandler<bool> OnOpPauseOrResumeEvent;
         public event EventHandler<EnumRobotEndType> OnRobotEndEvent;
 
         public LocalPackage()
@@ -566,12 +565,7 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 bool isAlarmSet = psMessage.Substring(0, 1) == "1";
-                int alarmCode = int.Parse(psMessage.Substring(1, Vehicle.AsePackageConfig.ErrorCodeLength));
-
-                if (alarmCode.ToString().Equals(Vehicle.AsePackageConfig.RemoteControlPauseErrorCode))
-                {
-                    OnOpPauseOrResumeEvent?.Invoke(this, isAlarmSet);
-                }
+                int alarmCode = int.Parse(psMessage.Substring(1, Vehicle.AsePackageConfig.ErrorCodeLength));                
 
                 if (isAlarmSet)
                 {

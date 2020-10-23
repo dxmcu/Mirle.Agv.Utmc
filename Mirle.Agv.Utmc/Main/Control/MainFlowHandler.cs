@@ -235,23 +235,15 @@ namespace Mirle.Agv.Utmc.Controller
                 agvcConnector.OnSendRecvTimeoutEvent += AgvcConnector_OnSendRecvTimeoutEvent;
                 agvcConnector.OnCstRenameEvent += AgvcConnector_OnCstRenameEvent;
 
-                //來自MoveControl的移動結束訊息, Send to MainFlow(this)'middleAgent'mapHandler
-                localPackage.OnUpdateSlotStatusEvent += AsePackage_OnUpdateSlotStatusEvent;
-                localPackage.OnModeChangeEvent += AsePackage_OnModeChangeEvent;
-                localPackage.ImportantPspLog += AsePackage_ImportantPspLog;
-
-                //來自IRobotControl的取放貨結束訊息, Send to MainFlow(this)'middleAgent'mapHandler
-                localPackage.OnRobotEndEvent += AsePackage_OnRobotEndEvent;
-
-                //來自IBatterysControl的電量改變訊息, Send to middleAgent
-                localPackage.OnBatteryPercentageChangeEvent += agvcConnector.AseBatteryControl_OnBatteryPercentageChangeEvent;
-                localPackage.OnBatteryPercentageChangeEvent += AseBatteryControl_OnBatteryPercentageChangeEvent;
-
-                localPackage.OnStatusChangeReportEvent += AsePackage_OnStatusChangeReportEvent;
-                localPackage.OnOpPauseOrResumeEvent += AsePackage_OnOpPauseOrResumeEvent;
-
-                localPackage.OnAlarmCodeSetEvent += AsePackage_OnAlarmCodeSetEvent1;
-                localPackage.OnAlarmCodeResetEvent += AsePackage_OnAlarmCodeResetEvent;
+                localPackage.OnUpdateSlotStatusEvent += LocalPackage_OnUpdateSlotStatusEvent;
+                localPackage.OnModeChangeEvent += LocalPackage_OnModeChangeEvent;
+                localPackage.ImportantPspLog += LocalPackage_ImportantPspLog;
+                localPackage.OnRobotEndEvent += LocalPackage_OnRobotEndEvent;
+                localPackage.OnBatteryPercentageChangeEvent += agvcConnector.LocalBatteryControl_OnBatteryPercentageChangeEvent;
+                localPackage.OnBatteryPercentageChangeEvent += LocalBatteryControl_OnBatteryPercentageChangeEvent;
+                localPackage.OnStatusChangeReportEvent += LocalPackage_OnStatusChangeReportEvent;
+                localPackage.OnAlarmCodeSetEvent += LocalPackage_OnAlarmCodeSetEvent1;
+                localPackage.OnAlarmCodeResetEvent += LocalPackage_OnAlarmCodeResetEvent;
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "事件"));
             }
@@ -1244,7 +1236,7 @@ namespace Mirle.Agv.Utmc.Controller
 
             Thread.Sleep(2000);
 
-            AsePackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
+            LocalPackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
         }
 
         private void LoadComplete()
@@ -1729,7 +1721,7 @@ namespace Mirle.Agv.Utmc.Controller
 
             Thread.Sleep(2000);
 
-            AsePackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
+            LocalPackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
         }
 
         private void UnloadComplete()
@@ -1788,7 +1780,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void AsePackage_OnRobotEndEvent(object sender, EnumRobotEndType robotEndType)
+        private void LocalPackage_OnRobotEndEvent(object sender, EnumRobotEndType robotEndType)
         {
             try
             {
@@ -3133,7 +3125,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         #region AsePackage
 
-        private void AseBatteryControl_OnBatteryPercentageChangeEvent(object sender, double batteryPercentage)
+        private void LocalBatteryControl_OnBatteryPercentageChangeEvent(object sender, double batteryPercentage)
         {
             try
             {
@@ -3157,7 +3149,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void AsePackage_OnUpdateSlotStatusEvent(object sender, CarrierSlotStatus slotStatus)
+        private void LocalPackage_OnUpdateSlotStatusEvent(object sender, CarrierSlotStatus slotStatus)
         {
             try
             {
@@ -3198,7 +3190,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         public object _ModeChangeLocker = new object();
 
-        public void AsePackage_OnModeChangeEvent(object sender, EnumAutoState autoState)
+        public void LocalPackage_OnModeChangeEvent(object sender, EnumAutoState autoState)
         {
             try
             {
@@ -3386,7 +3378,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void AsePackage_ImportantPspLog(object sender, string msg)
+        private void LocalPackage_ImportantPspLog(object sender, string msg)
         {
             try
             {
@@ -3397,23 +3389,23 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
-        private void AsePackage_OnAlarmCodeResetEvent(object sender, int e)
+        private void LocalPackage_OnAlarmCodeResetEvent(object sender, int e)
         {
             ResetAllAlarmsFromAgvl();
         }
 
-        private void AsePackage_OnAlarmCodeSetEvent1(object sender, int id)
+        private void LocalPackage_OnAlarmCodeSetEvent1(object sender, int id)
         {
             SetAlarmFromAgvl(id);
         }
 
-        private void AsePackage_OnStatusChangeReportEvent(object sender, string e)
+        private void LocalPackage_OnStatusChangeReportEvent(object sender, string e)
         {
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, e);
             agvcConnector.StatusChangeReport();
         }
 
-        private void AsePackage_OnOpPauseOrResumeEvent(object sender, bool e)
+        private void LocalPackage_OnOpPauseOrResumeEvent(object sender, bool e)
         {
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"AsePackage_OnOpPauseOrResumeEvent [{e}].");
 

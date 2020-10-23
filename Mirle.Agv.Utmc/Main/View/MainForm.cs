@@ -1178,10 +1178,10 @@ namespace Mirle.Agv.Utmc.View
                 switch (Vehicle.AutoState)
                 {
                     case EnumAutoState.Auto:
-                        mainFlowHandler.AsePackage_OnModeChangeEvent(this, EnumAutoState.Manual);
+                        mainFlowHandler.LocalPackage_OnModeChangeEvent(this, EnumAutoState.Manual);
                         break;
                     case EnumAutoState.Manual:
-                        mainFlowHandler.AsePackage_OnModeChangeEvent(this, EnumAutoState.Auto);
+                        mainFlowHandler.LocalPackage_OnModeChangeEvent(this, EnumAutoState.Auto);
                         break;
                     case EnumAutoState.None:
                         break;
