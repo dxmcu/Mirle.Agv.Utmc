@@ -28,7 +28,6 @@ namespace Mirle.Agv.Utmc.View
         private AgvcConnectorForm agvcConnectorForm;
         private AlarmForm alarmForm;
         private AlarmHandler alarmHandler;
-        private LocalPackageForm LocalPackageForm;
         private WarningForm warningForm;
         private ConfigForm configForm;
         private LoginForm loginForm;

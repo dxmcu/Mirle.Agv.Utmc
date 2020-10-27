@@ -12,7 +12,6 @@ namespace Mirle.Agv.Utmc.Model
         public double Voltage { get; set; } = 0;
         public int Percentage { get; set; } = 70;
         public int Temperature { get; set; } = 0;
-
         public BatteryStatus() { }        
 
         public BatteryStatus(BatteryStatus batteryStatus)

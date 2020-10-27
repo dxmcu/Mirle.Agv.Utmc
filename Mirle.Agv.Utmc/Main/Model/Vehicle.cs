@@ -88,7 +88,7 @@ namespace Mirle.Agv.Utmc.Model
 
         private Vehicle() { }
 
-        public CarrierSlotStatus GetAseCarrierSlotStatus(EnumSlotNumber slotNumber)
+        public CarrierSlotStatus GetCarrierSlotStatusFrom(EnumSlotNumber slotNumber)
         {
             switch (slotNumber)
             {

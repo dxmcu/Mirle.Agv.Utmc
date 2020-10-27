@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mirle.Agv.Utmc.Controller
+namespace Mirle.Agv.Utmc.Robot
 {
     public class NullObjRobotHandler : IRobotHandler
     {
@@ -30,11 +30,11 @@ namespace Mirle.Agv.Utmc.Controller
 
         }
 
-        public void DoRobotCommand(RobotCommand robotCommand)
+        public void DoRobotCommandFor(RobotCommand robotCommand)
         {
             Task.Run(() =>
             {
-                if (robotCommand.GetTransferStepType()== EnumTransferStepType.Load)
+                if (robotCommand.GetTransferStepType() == EnumTransferStepType.Load)
                 {
                     RobotStatus = new RobotStatus() { EnumRobotState = EnumRobotState.Busy, IsHome = false };
 
@@ -77,9 +77,15 @@ namespace Mirle.Agv.Utmc.Controller
             });
         }
 
-        public void RefreshRobotAndCarrierSlotState()
+        public void GetRobotAndCarrierSlotStatus()
         {
             OnUpdateRobotStatusEvent?.Invoke(this, RobotStatus);
+            OnUpdateCarrierSlotStatusEvent?.Invoke(this, CarrierSlotStatus);
+        }
+
+        public void SetCarrierSlotStatusTo(CarrierSlotStatus carrierSlotStatus)
+        {
+            CarrierSlotStatus = carrierSlotStatus;
             OnUpdateCarrierSlotStatusEvent?.Invoke(this, CarrierSlotStatus);
         }
     }

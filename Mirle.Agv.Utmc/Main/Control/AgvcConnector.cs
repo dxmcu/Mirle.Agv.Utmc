@@ -2214,7 +2214,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
 
             MoveStatus moveStatus = new MoveStatus(Vehicle.MoveStatus);
-            CarrierSlotStatus slotStatus = Vehicle.GetAseCarrierSlotStatus(SlotNumber);
+            CarrierSlotStatus slotStatus = Vehicle.GetCarrierSlotStatusFrom(SlotNumber);
 
             try
             {
@@ -2245,7 +2245,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
 
             MoveStatus moveStatus = new MoveStatus(Vehicle.MoveStatus);
-            CarrierSlotStatus slotStatus = Vehicle.GetAseCarrierSlotStatus(SlotNumber);
+            CarrierSlotStatus slotStatus = Vehicle.GetCarrierSlotStatusFrom(SlotNumber);
 
             try
             {

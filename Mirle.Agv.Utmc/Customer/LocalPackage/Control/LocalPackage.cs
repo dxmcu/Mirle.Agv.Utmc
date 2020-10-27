@@ -614,7 +614,7 @@ namespace Mirle.Agv.Utmc.Controller
                     return;
                 }
 
-                carrierSlotStatus.EnumCarrierSlotState = GetCarrierSlotStatus(psMessage.Substring(2, 1));
+                //carrierSlotStatus.EnumCarrierSlotState = GetCarrierSlotStatus(psMessage.Substring(2, 1));
                 carrierSlotStatus.CarrierId = psMessage.Substring(3);
                 if (carrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
                 {
@@ -662,7 +662,7 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 RobotStatus aseRobotStatus = new RobotStatus();
-                aseRobotStatus.EnumRobotState = GetRobotStatus(psMessage.Substring(0, 1));
+                //aseRobotStatus.EnumRobotState = GetRobotStatus(psMessage.Substring(0, 1));
                 aseRobotStatus.IsHome = psMessage.Substring(1, 1) == "1";
 
                 Vehicle.RobotStatus = aseRobotStatus;
@@ -804,7 +804,7 @@ namespace Mirle.Agv.Utmc.Controller
                 //200522 dabid+ To Report 144 While Percentage diff
                 if (Vehicle.BatteryStatus.Percentage != aseBatteryStatus.Percentage)
                 {
-                    SetPercentage(aseBatteryStatus.Percentage);
+                    //SetPercentage(aseBatteryStatus.Percentage);
                 }
 
                 Vehicle.BatteryStatus = aseBatteryStatus;

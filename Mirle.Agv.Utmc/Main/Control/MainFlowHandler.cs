@@ -33,8 +33,9 @@ namespace Mirle.Agv.Utmc.Controller
         public AlarmHandler alarmHandler;
         public MapHandler mapHandler;
         public LocalPackage localPackage;
-        public IRobotHandler RobotHandler { get; set; }
         public UserAgent UserAgent { get; set; } = new UserAgent();
+        public Robot.IRobotHandler RobotHandler { get; set; }
+        public Battery.IBatteryHandler BatteryHandler { get; set; }
 
         #endregion
 
@@ -183,8 +184,11 @@ namespace Mirle.Agv.Utmc.Controller
                 alarmHandler = new AlarmHandler();
                 mapHandler = new MapHandler();
                 agvcConnector = new AgvcConnector(this);
+
                 localPackage = new LocalPackage();
-                RobotHandler = new NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
+                RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
+                BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
+
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
             }
             catch (Exception ex)
@@ -235,6 +239,9 @@ namespace Mirle.Agv.Utmc.Controller
                 RobotHandler.OnUpdateCarrierSlotStatusEvent += RobotHandler_OnUpdateCarrierSlotStatusEvent;
                 RobotHandler.OnUpdateRobotStatusEvent += RobotHandler_OnUpdateRobotStatusEvent;
 
+                BatteryHandler.OnUpdateBatteryStatusEvent += BatteryHandler_OnUpdateBatteryStatusEvent;
+                BatteryHandler.OnUpdateChargeStatusEvent += BatteryHandler_OnUpdateChargeStatusEvent;
+
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "事件"));
             }
             catch (Exception ex)
@@ -245,6 +252,7 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
+
 
         private void VehicleLocationInitialAndThreadsInitial()
         {
@@ -1157,7 +1165,7 @@ namespace Mirle.Agv.Utmc.Controller
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
                     //SimulationLoad();
-                    RobotHandler.DoRobotCommand(loadCmd);
+                    RobotHandler.DoRobotCommandFor(loadCmd);
                 }
                 else
                 {
@@ -1227,7 +1235,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                CarrierSlotStatus slotStatus = Vehicle.GetAseCarrierSlotStatus(slotNumber);
+                CarrierSlotStatus slotStatus = Vehicle.GetCarrierSlotStatusFrom(slotNumber);
 
                 if (Vehicle.MainFlowConfig.BcrByPass)
                 {
@@ -1620,7 +1628,7 @@ namespace Mirle.Agv.Utmc.Controller
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
                     //SimulationUnload();
-                    RobotHandler.DoRobotCommand(unloadCmd);
+                    RobotHandler.DoRobotCommandFor(unloadCmd);
                 }
                 else
                 {
@@ -1675,7 +1683,7 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 var slotNumber = Vehicle.TransferCommand.SlotNumber;
-                CarrierSlotStatus aseCarrierSlotStatus = Vehicle.GetAseCarrierSlotStatus(slotNumber);
+                CarrierSlotStatus aseCarrierSlotStatus = Vehicle.GetCarrierSlotStatusFrom(slotNumber);
 
                 switch (aseCarrierSlotStatus.EnumCarrierSlotState)
                 {
@@ -1726,48 +1734,6 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void LocalPackage_OnRobotEndEvent(object sender, EnumRobotEndType robotEndType)
-        {
-            try
-            {
-                if (IsStopChargTimeoutInRobotStep)
-                {
-                    IsStopChargTimeoutInRobotStep = false;
-                    SetAlarmFromAgvm(14);
-                }
-
-                switch (robotEndType)
-                {
-                    case EnumRobotEndType.Finished:
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.命令.完成] AseRobotContorl_OnRobotCommandFinishEvent");
-
-                            Vehicle.TransferCommand.IsRobotEnd = true;
-                        }
-                        break;
-                    case EnumRobotEndType.InterlockError:
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.交握.失敗] AseRobotControl_OnRobotInterlockErrorEvent");
-                            ResetAllAlarmsFromAgvm();
-
-                            Vehicle.TransferCommand.CompleteStatus = CompleteStatus.InterlockError;
-                            Vehicle.TransferCommand.IsStopAndClear = true;
-                        }
-                        break;
-                    case EnumRobotEndType.RobotError:
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.命令.失敗] AseRobotControl_OnRobotCommandErrorEvent");
-                            Vehicle.TransferCommand.TransferStep = EnumTransferStep.RobotFail;
-                        }
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
         private void AgvcConnector_OnSendRecvTimeoutEvent(object sender, EventArgs e)
         {
             // SetAlarmFromAgvm(38);
@@ -1777,8 +1743,9 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                CarrierSlotStatus slotStatus = slotNumber == EnumSlotNumber.L ? Vehicle.CarrierSlotLeft : Vehicle.CarrierSlotRight;
-                localPackage.CstRename(slotStatus);
+                CarrierSlotStatus slotStatus = Vehicle.GetCarrierSlotStatusFrom(slotNumber); 
+                //CstRename(slotStatus);
+                RobotHandler.SetCarrierSlotStatusTo(slotStatus);
             }
             catch (Exception ex)
             {
@@ -2398,15 +2365,14 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 IsArrivalCharge = true;
-                var address = endAddress;
                 var percentage = Vehicle.BatteryStatus.Percentage;
                 var highPercentage = Vehicle.MainFlowConfig.HighPowerPercentage;
 
-                if (address.IsCharger())
+                if (endAddress.IsCharger())
                 {
                     if (IsHighPower())
                     {
-                        var msg = $"Vehicle arrival {address.Id},Charge Direction = {address.ChargeDirection},Precentage = {percentage} > {highPercentage}(Threshold),  thus NOT send charge command.";
+                        var msg = $"[電量過高.無法充電] High power not start charge.[Precentage = {percentage}] > [Threshold = {highPercentage}][Vehicle arrival {endAddress.Id},Charge Direction = {endAddress.ChargeDirection}].";
                         LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
                         return;
                     }
@@ -2414,47 +2380,42 @@ namespace Mirle.Agv.Utmc.Controller
                     agvcConnector.ChargHandshaking();
                     Vehicle.IsCharging = true;
 
-                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"Start Charge, Vehicle arrival {address.Id},Charge Direction = {address.ChargeDirection},Precentage = {percentage}.");
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"[充電.開始.執行] Start Charge, Vehicle arrival {endAddress.Id},Charge Direction = {endAddress.ChargeDirection},Precentage = {percentage}.");
 
-                    if (Vehicle.MainFlowConfig.IsSimulation)
+                    //if (Vehicle.MainFlowConfig.IsSimulation)
+                    //{
+                    //    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[充電.成功] Start Charge success.");
+                    //    if (chargeTimeSec > 0)
+                    //    {
+                    //        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"[提早斷充.開始({chargeTimeSec})後] Roboting STOP charge in ({chargeTimeSec}) sec.");
+                    //        SpinWait.SpinUntil(() => false, chargeTimeSec * 1000);
+                    //        StopCharge();
+                    //    }
+                    //    return;
+                    //}
+
+                    Vehicle.CheckStartChargeReplyEnd = false;
+                    //localPackage.StartCharge(address.ChargeDirection);
+                    BatteryHandler.StartCharge(endAddress.ChargeDirection);
+
+                    SpinWait.SpinUntil(() => Vehicle.CheckStartChargeReplyEnd, 30 * 1000);
+
+                    if (Vehicle.CheckStartChargeReplyEnd)
                     {
                         LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[充電.成功] Start Charge success.");
-                        if (chargeTimeSec > 0)
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"[提早斷充.開始({chargeTimeSec})後] Roboting STOP charge in ({chargeTimeSec}) sec.");
-                            SpinWait.SpinUntil(() => false, chargeTimeSec * 1000);
-                            StopCharge();
-                        }
-                        return;
-                    }
-                    Vehicle.CheckStartChargeReplyEnd = false;
-                    localPackage.StartCharge(address.ChargeDirection);
-
-
-                    if (chargeTimeSec > 0)
-                    {
-                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"[提早斷充.開始({chargeTimeSec})後] Roboting STOP charge in ({chargeTimeSec}) sec.");
-                        SpinWait.SpinUntil(() => false, chargeTimeSec * 1000);
-                        StopCharge();
+                        agvcConnector.Charging();
+                        IsLowPowerStartChargeTimeout = false;
                     }
                     else
                     {
-                        SpinWait.SpinUntil(() => Vehicle.CheckStartChargeReplyEnd, 30 * 1000);
+                        Vehicle.IsCharging = false;
+                        SetAlarmFromAgvm(000013);
+                        //localPackage.ChargeStatusRequest();
+                        BatteryHandler.GetBatteryAndChargeStatus();
 
-                        if (Vehicle.CheckStartChargeReplyEnd)
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[充電.成功] Start Charge success.");
-                            agvcConnector.Charging();
-                            IsLowPowerStartChargeTimeout = false;
-                        }
-                        else
-                        {
-                            Vehicle.IsCharging = false;
-                            SetAlarmFromAgvm(000013);
-                            localPackage.ChargeStatusRequest();
-                            SpinWait.SpinUntil(() => false, 500);
-                            localPackage.StopCharge();
-                        }
+                        SpinWait.SpinUntil(() => false, 500);
+                        //localPackage.StopCharge();
+                        BatteryHandler.StopCharge();
                     }
 
                     Vehicle.CheckStartChargeReplyEnd = true;
@@ -2506,13 +2467,14 @@ namespace Mirle.Agv.Utmc.Controller
                             return;
                         }
                     }
+
                     agvcConnector.ChargHandshaking();
 
                     Vehicle.IsCharging = true;
 
                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $@"Start Charge, Vehicle arrival {lastAddress.Id},Charge Direction = {lastAddress.ChargeDirection},Precentage = {Vehicle.BatteryStatus.Percentage}.");
 
-                    if (Vehicle.MainFlowConfig.IsSimulation) return;
+                    //if (Vehicle.MainFlowConfig.IsSimulation) return;
 
                     Vehicle.CheckStartChargeReplyEnd = false;
 
@@ -2520,7 +2482,8 @@ namespace Mirle.Agv.Utmc.Controller
 
                     for (int i = 0; i < retryCount; i++)
                     {
-                        localPackage.StartCharge(lastAddress.ChargeDirection);
+                        //localPackage.StartCharge(lastAddress.ChargeDirection);
+                        BatteryHandler.StartCharge(lastAddress.ChargeDirection);
 
                         SpinWait.SpinUntil(() => Vehicle.CheckStartChargeReplyEnd, Vehicle.MainFlowConfig.StartChargeWaitingTimeoutMs);
 
@@ -2540,9 +2503,13 @@ namespace Mirle.Agv.Utmc.Controller
                     {
                         Vehicle.IsCharging = false;
                         SetAlarmFromAgvm(000013);
-                        localPackage.ChargeStatusRequest();
+                        //localPackage.ChargeStatusRequest();
+                        BatteryHandler.GetBatteryAndChargeStatus();
+
                         SpinWait.SpinUntil(() => false, 500);
-                        localPackage.StopCharge();
+                        //localPackage.StopCharge();
+                        BatteryHandler.StopCharge();
+
                         //IsLowPowerStartChargeTimeout = true;
                     }
 
@@ -2568,26 +2535,30 @@ namespace Mirle.Agv.Utmc.Controller
                 {
                     agvcConnector.ChargHandshaking();
 
-                    if (Vehicle.MainFlowConfig.IsSimulation)
-                    {
-                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[斷充.成功] Stop Charge success.");
-                        Vehicle.IsCharging = false;
-                        return;
-                    }
+                    //if (Vehicle.MainFlowConfig.IsSimulation)
+                    //{
+                    //    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[斷充.成功] Stop Charge success.");
+                    //    Vehicle.IsCharging = false;
+                    //    return;
+                    //}
 
                     //in starting charge
-                    if (!Vehicle.CheckStartChargeReplyEnd) Thread.Sleep(Vehicle.MainFlowConfig.StopChargeWaitingTimeoutMs);
+                    //if (!Vehicle.CheckStartChargeReplyEnd) Thread.Sleep(Vehicle.MainFlowConfig.StopChargeWaitingTimeoutMs);
+                    SpinWait.SpinUntil(() => Vehicle.CheckStartChargeReplyEnd, Vehicle.MainFlowConfig.StopChargeWaitingTimeoutMs);
 
                     int retryCount = Vehicle.MainFlowConfig.DischargeRetryTimes;
                     Vehicle.IsCharging = true;
 
                     for (int i = 0; i < retryCount; i++)
                     {
-                        localPackage.StopCharge();
+                        //localPackage.StopCharge();
+                        BatteryHandler.StopCharge();
 
                         SpinWait.SpinUntil(() => !Vehicle.IsCharging, Vehicle.MainFlowConfig.StopChargeWaitingTimeoutMs);
 
-                        localPackage.ChargeStatusRequest();
+                        //localPackage.ChargeStatusRequest();
+                        BatteryHandler.GetBatteryAndChargeStatus();
+
                         SpinWait.SpinUntil(() => false, 500);
 
                         if (!Vehicle.IsCharging)
@@ -2706,6 +2677,45 @@ namespace Mirle.Agv.Utmc.Controller
 
             return false;
         }
+
+        private void BatteryHandler_OnUpdateChargeStatusEvent(object sender, bool isCharging)
+        {
+            try
+            {
+                Vehicle.IsCharging = isCharging;
+
+                if (isCharging)
+                {
+                    Vehicle.CheckStartChargeReplyEnd = true;
+                }
+                else
+                {
+                    Vehicle.CheckStopChargeReplyEnd = true;
+                }
+
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[充電.狀態.改變] UpdateChargeStatus:[{isCharging}][Percentage={Vehicle.BatteryStatus.Percentage}]");
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
+        }
+
+        private void BatteryHandler_OnUpdateBatteryStatusEvent(object sender, BatteryStatus batteryStatus)
+        {
+            try
+            {
+                Vehicle.BatteryStatus = batteryStatus;
+
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[電池.狀態.改變] UpdateBatteryStatus:[{Vehicle.IsCharging}][Percentage={batteryStatus.Percentage}]");
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
 
         #endregion
 
@@ -2984,15 +2994,19 @@ namespace Mirle.Agv.Utmc.Controller
         public void StopVehicle()
         {
             localPackage.MoveStop();
-            localPackage.ClearRobotCommand();
-            localPackage.StopCharge();
+            //localPackage.ClearRobotCommand();
+            RobotHandler.ClearRobotCommand();
+            //localPackage.StopCharge();
+            BatteryHandler.StopCharge();
+
 
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow : Stop Vehicle, [MoveState={Vehicle.MoveStatus.EnumMoveState}][IsCharging={Vehicle.IsCharging}]");
         }
 
         public void SetupVehicleSoc(int percentage)
         {
-            localPackage.SetPercentage(percentage);
+            //localPackage.SetPercentage(percentage);
+            BatteryHandler.SetPercentageTo(percentage);
         }
 
         private void AgvcConnector_OnRenameCassetteIdEvent(object sender, CarrierSlotStatus e)
