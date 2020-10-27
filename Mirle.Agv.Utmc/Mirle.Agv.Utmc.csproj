@@ -8,8 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{F88F96FD-CDDF-467E-9B1F-ABD97BD7F7C5}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>Mirle.Agv.AseMiddler</RootNamespace>
-    <AssemblyName>Mirle.Agv.AseMiddler</AssemblyName>
+    <RootNamespace>Mirle.Agv.Utmc</RootNamespace>
+    <AssemblyName>Mirle.Agv.Utmc</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -44,6 +44,7 @@
     <WarningLevel>4</WarningLevel>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <Prefer32Bit>true</Prefer32Bit>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -53,6 +54,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Resource\VehHasCarrier.ico</ApplicationIcon>
@@ -216,6 +218,8 @@
     <Compile Include="Main\View\WarningForm.Designer.cs">
       <DependentUpon>WarningForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Robot\IRobotHandler.cs" />
+    <Compile Include="Robot\NullObjRobotHandler.cs" />
     <EmbeddedResource Include="Customer\LocalPackage\View\AgvlConnectorForm.resx">
       <DependentUpon>AgvlConnectorForm.cs</DependentUpon>
     </EmbeddedResource>

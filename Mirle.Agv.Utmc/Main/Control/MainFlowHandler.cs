@@ -33,6 +33,7 @@ namespace Mirle.Agv.Utmc.Controller
         public AlarmHandler alarmHandler;
         public MapHandler mapHandler;
         public LocalPackage localPackage;
+        public IRobotHandler RobotHandler { get; set; }
         public UserAgent UserAgent { get; set; } = new UserAgent();
 
         #endregion
@@ -183,6 +184,7 @@ namespace Mirle.Agv.Utmc.Controller
                 mapHandler = new MapHandler();
                 agvcConnector = new AgvcConnector(this);
                 localPackage = new LocalPackage();
+                RobotHandler = new NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
             }
             catch (Exception ex)
@@ -221,15 +223,17 @@ namespace Mirle.Agv.Utmc.Controller
                 agvcConnector.OnSendRecvTimeoutEvent += AgvcConnector_OnSendRecvTimeoutEvent;
                 agvcConnector.OnCstRenameEvent += AgvcConnector_OnCstRenameEvent;
 
-                localPackage.OnUpdateSlotStatusEvent += LocalPackage_OnUpdateSlotStatusEvent;
                 localPackage.OnModeChangeEvent += LocalPackage_OnModeChangeEvent;
-                localPackage.ImportantPspLog += LocalPackage_ImportantPspLog;
-                localPackage.OnRobotEndEvent += LocalPackage_OnRobotEndEvent;
+                //localPackage.ImportantPspLog += LocalPackage_ImportantPspLog;
                 localPackage.OnBatteryPercentageChangeEvent += agvcConnector.LocalBatteryControl_OnBatteryPercentageChangeEvent;
                 localPackage.OnBatteryPercentageChangeEvent += LocalBatteryControl_OnBatteryPercentageChangeEvent;
                 localPackage.OnStatusChangeReportEvent += LocalPackage_OnStatusChangeReportEvent;
                 localPackage.OnAlarmCodeSetEvent += LocalPackage_OnAlarmCodeSetEvent1;
                 localPackage.OnAlarmCodeResetEvent += LocalPackage_OnAlarmCodeResetEvent;
+
+                RobotHandler.OnRobotEndEvent += RobotHandler_OnRobotEndEvent;
+                RobotHandler.OnUpdateCarrierSlotStatusEvent += RobotHandler_OnUpdateCarrierSlotStatusEvent;
+                RobotHandler.OnUpdateRobotStatusEvent += RobotHandler_OnUpdateRobotStatusEvent;
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "事件"));
             }
@@ -1152,7 +1156,8 @@ namespace Mirle.Agv.Utmc.Controller
 
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
-                    SimulationLoad();
+                    //SimulationLoad();
+                    RobotHandler.DoRobotCommand(loadCmd);
                 }
                 else
                 {
@@ -1200,29 +1205,6 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
                 return new LoadCmdInfo(Vehicle.TransferCommand);
             }
-        }
-
-        private void SimulationLoad()
-        {
-            Thread.Sleep(2000);
-
-            switch (Vehicle.TransferCommand.SlotNumber)
-            {
-                case EnumSlotNumber.L:
-                    Vehicle.CarrierSlotLeft.CarrierId = Vehicle.TransferCommand.CassetteId;
-                    Vehicle.CarrierSlotLeft.EnumCarrierSlotState = EnumCarrierSlotState.Loading;
-                    break;
-                case EnumSlotNumber.R:
-                    Vehicle.CarrierSlotRight.CarrierId = Vehicle.TransferCommand.CassetteId;
-                    Vehicle.CarrierSlotRight.EnumCarrierSlotState = EnumCarrierSlotState.Loading;
-                    break;
-            }
-
-            agvcConnector.StatusChangeReport();
-
-            Thread.Sleep(2000);
-
-            LocalPackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
         }
 
         private void LoadComplete()
@@ -1637,7 +1619,8 @@ namespace Mirle.Agv.Utmc.Controller
 
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
-                    SimulationUnload();
+                    //SimulationUnload();
+                    RobotHandler.DoRobotCommand(unloadCmd);
                 }
                 else
                 {
@@ -1685,29 +1668,6 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
                 return new UnloadCmdInfo(Vehicle.TransferCommand);
             }
-        }
-
-        private void SimulationUnload()
-        {
-            Thread.Sleep(2000);
-
-            switch (Vehicle.TransferCommand.SlotNumber)
-            {
-                case EnumSlotNumber.L:
-                    Vehicle.CarrierSlotLeft.CarrierId = "";
-                    Vehicle.CarrierSlotLeft.EnumCarrierSlotState = EnumCarrierSlotState.Empty;
-                    break;
-                case EnumSlotNumber.R:
-                    Vehicle.CarrierSlotRight.CarrierId = "";
-                    Vehicle.CarrierSlotRight.EnumCarrierSlotState = EnumCarrierSlotState.Empty;
-                    break;
-            }
-
-            agvcConnector.StatusChangeReport();
-
-            Thread.Sleep(2000);
-
-            LocalPackage_OnRobotEndEvent(this, EnumRobotEndType.Finished);
         }
 
         private void UnloadComplete()
@@ -1819,6 +1779,107 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 CarrierSlotStatus slotStatus = slotNumber == EnumSlotNumber.L ? Vehicle.CarrierSlotLeft : Vehicle.CarrierSlotRight;
                 localPackage.CstRename(slotStatus);
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void RobotHandler_OnUpdateRobotStatusEvent(object sender, RobotStatus aseRobotStatus)
+        {
+            try
+            {
+                Vehicle.RobotStatus = aseRobotStatus;
+
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[手臂.狀態.改變] UpdateRobotStatus:[{Vehicle.RobotStatus.EnumRobotState}][RobotHome={Vehicle.RobotStatus.IsHome}]");
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void RobotHandler_OnUpdateCarrierSlotStatusEvent(object sender, CarrierSlotStatus slotStatus)
+        {
+            try
+            {
+                if (slotStatus.ManualDeleteCST)
+                {
+                    slotStatus.CarrierId = "";
+                    slotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Empty;
+                    switch (slotStatus.SlotNumber)
+                    {
+                        case EnumSlotNumber.L:
+                            Vehicle.CarrierSlotLeft = slotStatus;
+                            break;
+                        case EnumSlotNumber.R:
+                            Vehicle.CarrierSlotRight = slotStatus;
+                            break;
+                    }
+
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[手動.清空.儲位.狀態] OnUpdateCarrierSlotStatus: ManualDeleteCST[{slotStatus.SlotNumber}][{slotStatus.EnumCarrierSlotState}][ID={slotStatus.CarrierId}]");
+
+                    agvcConnector.Send_Cmd136_CstRemove(slotStatus.SlotNumber);
+                }
+                else
+                {
+                    switch (slotStatus.SlotNumber)
+                    {
+                        case EnumSlotNumber.L:
+                            Vehicle.CarrierSlotLeft = slotStatus;
+                            break;
+                        case EnumSlotNumber.R:
+                            Vehicle.CarrierSlotRight = slotStatus;
+                            break;
+                    }
+
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[儲位.狀態.改變] OnUpdateCarrierSlotStatus:[{slotStatus.SlotNumber}][{slotStatus.EnumCarrierSlotState}][ID={slotStatus.CarrierId}]");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
+            agvcConnector.StatusChangeReport();
+        }
+
+        private void RobotHandler_OnRobotEndEvent(object sender, EnumRobotEndType robotEndType)
+        {
+            try
+            {
+                if (IsStopChargTimeoutInRobotStep)
+                {
+                    IsStopChargTimeoutInRobotStep = false;
+                    SetAlarmFromAgvm(14);
+                }
+
+                switch (robotEndType)
+                {
+                    case EnumRobotEndType.Finished:
+                        {
+                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.命令.完成] AseRobotContorl_OnRobotCommandFinishEvent");
+
+                            Vehicle.TransferCommand.IsRobotEnd = true;
+                        }
+                        break;
+                    case EnumRobotEndType.InterlockError:
+                        {
+                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.交握.失敗] AseRobotControl_OnRobotInterlockErrorEvent");
+                            ResetAllAlarmsFromAgvm();
+
+                            Vehicle.TransferCommand.CompleteStatus = CompleteStatus.InterlockError;
+                            Vehicle.TransferCommand.IsStopAndClear = true;
+                        }
+                        break;
+                    case EnumRobotEndType.RobotError:
+                        {
+                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.命令.失敗] AseRobotControl_OnRobotCommandErrorEvent");
+                            Vehicle.TransferCommand.TransferStep = EnumTransferStep.RobotFail;
+                        }
+                        break;
+                }
             }
             catch (Exception ex)
             {

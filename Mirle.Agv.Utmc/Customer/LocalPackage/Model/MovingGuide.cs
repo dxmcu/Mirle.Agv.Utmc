@@ -16,7 +16,7 @@ namespace Mirle.Agv.Utmc.Model
         public string FromAddressId { get; set; } = "";
         public string ToAddressId { get; set; } = "";
         public uint GuideDistance { get; set; } = 0;
-        public VhStopSingle ReserveStop { get; set; } = VhStopSingle.Off;       
+        public VhStopSingle ReserveStop { get; set; } = VhStopSingle.Off;
         public List<MapSection> MovingSections { get; set; } = new List<MapSection>();
         public int MovingSectionsIndex { get; set; } = 0;
         public ushort SeqNum { get; set; }
@@ -63,6 +63,22 @@ namespace Mirle.Agv.Utmc.Model
             this.SeqNum = seqNum;
             this.CommandId = string.IsNullOrEmpty(Vehicle.Instance.MovingGuide.CommandId) ? "" : Vehicle.Instance.MovingGuide.CommandId;
             this.ReserveStop = VhStopSingle.On;
+        }
+
+        public string GetJsonInfo()
+        {
+            return $"[GuideSectionIds={GuideSectionIds.GetJsonInfo()}]\r\n" +
+                   $"[GuideAddressIds={GuideAddressIds.GetJsonInfo()}]\r\n" +
+                   $"[FromAddressId={FromAddressId}]\r\n" +
+                   $"[ToAddressId={ToAddressId}]\r\n" +
+                   $"[ReserveStop={ReserveStop}]\r\n" +
+                   $"[MovingSections={MovingSections.Count}]\r\n" +
+                   $"[SeqNum={SeqNum}]\r\n" +
+                   $"[CommandId={CommandId}]\r\n" +
+                   $"[MoveComplete ={MoveComplete}]\r\n" +
+                   $"[IsAvoidComplete ={IsAvoidComplete}]\r\n" +
+                   $"[IsAvoidMove ={IsAvoidMove}]\r\n" +
+                   $"[IsOverrideMove ={IsOverrideMove}]\r\n";
         }
     }
 }

@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制.
 // 變更這些屬性的值即可修改組件的相關
 // 資訊.
-[assembly: AssemblyTitle("Mirle.Agv.Ase.Middler")]
+[assembly: AssemblyTitle("Mirle.Agv.Utmc")]
 [assembly: AssemblyDescription("Agv Local Controller")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mirle Automation Corporation")]
-[assembly: AssemblyProduct("Mirle.Agv.AseMiddler")]
+[assembly: AssemblyProduct("Mirle.Agv.Utmc")]
 [assembly: AssemblyCopyright("Copyright © Mirle Automation Corporation 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
