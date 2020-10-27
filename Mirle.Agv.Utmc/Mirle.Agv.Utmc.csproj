@@ -121,6 +121,7 @@
   <ItemGroup>
     <Compile Include="Battery\IBatteryHandler.cs" />
     <Compile Include="Battery\NullObjBatteryHandler.cs" />
+    <Compile Include="Battery\UtmcBatteryAdapter.cs" />
     <Compile Include="Customer\LocalPackage\Control\LocalPackage.cs" />
     <Compile Include="Customer\LocalPackage\Model\PositionArgs.cs" />
     <Compile Include="Customer\LocalPackage\Model\Configs\LocalPackageBatteryConfig.cs" />

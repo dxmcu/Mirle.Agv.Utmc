@@ -1274,7 +1274,7 @@ namespace Mirle.Agv.Utmc.Controller
             return v.Split(',');
         }
 
-        public void LocalBatteryControl_OnBatteryPercentageChangeEvent(object sender, double batteryPercentage)
+        public void BatteryHandler_OnBatteryPercentageChangeEvent(object sender, double batteryPercentage)
         {
             BatteryPercentageChangeReport(MethodBase.GetCurrentMethod().Name, (ushort)batteryPercentage);
         }

@@ -1447,12 +1447,10 @@ namespace Mirle.Agv.Utmc.View
                 btnStopCharge.Enabled = false;
 
                 System.Threading.Tasks.Task.Run(() =>
-               {
-                   mainFlowHandler.StopCharge();
-                   IsEnableStopChargeButton = true;
-               });
-
-                // btnStopCharge.Enabled = true;
+                {
+                    mainFlowHandler.StopCharge();
+                    IsEnableStopChargeButton = true;
+                });
             }
             catch (Exception ex)
             {
