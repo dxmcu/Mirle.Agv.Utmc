@@ -4,10 +4,7 @@ using Mirle.Agv.Utmc.Model.Configs;
 using Mirle.Agv.Utmc.Model.TransferSteps;
 using Mirle.Tools;
 using Newtonsoft.Json;
-using NLog.Layouts;
-using NUnit.Framework;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,6 +33,7 @@ namespace Mirle.Agv.Utmc.Controller
         public UserAgent UserAgent { get; set; } = new UserAgent();
         public Robot.IRobotHandler RobotHandler { get; set; }
         public Battery.IBatteryHandler BatteryHandler { get; set; }
+        public Move.IMoveHandler MoveHandler { get; set; }
 
         #endregion
 
@@ -43,9 +41,6 @@ namespace Mirle.Agv.Utmc.Controller
 
         private Thread thdVisitTransferSteps;
         public bool IsVisitTransferStepPause { get; set; } = false;
-
-        private Thread thdTrackPosition;
-        public bool IsTrackPositionPause { get; set; } = false;
 
         private Thread thdWatchChargeStage;
         public bool IsWatchChargeStagePause { get; set; } = false;
@@ -132,19 +127,6 @@ namespace Mirle.Agv.Utmc.Controller
                 Vehicle.BatteryLog = JsonConvert.DeserializeObject<BatteryLog>(allText);
                 InitialSoc = Vehicle.BatteryLog.InitialSoc;
 
-                allText = System.IO.File.ReadAllText("BatteryConfig.json");
-                Vehicle.LocalPackageBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(allText);
-
-                allText = System.IO.File.ReadAllText("AseMoveConfig.json");
-                Vehicle.MoveConfig = JsonConvert.DeserializeObject<MoveConfig>(allText);
-
-                if (Vehicle.MainFlowConfig.IsSimulation)
-                {
-                    Vehicle.LocalPackageBatteryConfig.WatchBatteryStateInterval = 30 * 1000;
-                    Vehicle.LocalPackageBatteryConfig.WatchBatteryStateIntervalInCharging = 30 * 1000;
-                    Vehicle.MoveConfig.WatchPositionInterval = 5000;
-                }
-
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "讀寫設定檔"));
             }
             catch (Exception)
@@ -188,6 +170,7 @@ namespace Mirle.Agv.Utmc.Controller
                 localPackage = new LocalPackage();
                 RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
                 BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
+                MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
             }
@@ -233,12 +216,23 @@ namespace Mirle.Agv.Utmc.Controller
                 localPackage.OnAlarmCodeSetEvent += LocalPackage_OnAlarmCodeSetEvent1;
                 localPackage.OnAlarmCodeResetEvent += LocalPackage_OnAlarmCodeResetEvent;
 
+                MoveHandler.OnUpdateMoveStatusEvent += MoveHandler_OnUpdateMoveStatusEvent;
+                MoveHandler.OnUpdatePositionArgsEvent += MoveHandler_OnUpdatePositionArgsEvent;
+                MoveHandler.OnOpPauseOrResumeEvent += MoveHandler_OnOpPauseOrResumeEvent;
+                MoveHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
+                MoveHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
+
                 RobotHandler.OnRobotEndEvent += RobotHandler_OnRobotEndEvent;
                 RobotHandler.OnUpdateCarrierSlotStatusEvent += RobotHandler_OnUpdateCarrierSlotStatusEvent;
                 RobotHandler.OnUpdateRobotStatusEvent += RobotHandler_OnUpdateRobotStatusEvent;
+                RobotHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
+                RobotHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
 
                 BatteryHandler.OnUpdateBatteryStatusEvent += BatteryHandler_OnUpdateBatteryStatusEvent;
                 BatteryHandler.OnUpdateChargeStatusEvent += BatteryHandler_OnUpdateChargeStatusEvent;
+                BatteryHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
+                BatteryHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
+
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "事件"));
             }
@@ -251,38 +245,13 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-
         private void VehicleLocationInitialAndThreadsInitial()
         {
-            if (Vehicle.MainFlowConfig.IsSimulation)
-            {
-                try
-                {
-                    PositionArgs positionArgs = new PositionArgs()
-                    {
-                        EnumLocalArrival = EnumLocalArrival.Arrival,
-                        MapPosition = Vehicle.Mapinfo.addressMap.First(/*x => x.Key != ""*/).Value.Position
-                    };
-                    localPackage.ReceivePositionArgsQueue.Enqueue(positionArgs);
-                }
-                catch (Exception ex)
-                {
-                    Vehicle.MoveStatus.LastMapPosition = new MapPosition();
-                    LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-                }
-            }
-            else
-            {
-                if (Vehicle.IsLocalConnect)
-                {
-                    //asePackage.AllAgvlStatusReportRequest();
-                }
-            }
+            MoveHandler.InitialPosition();
+
             StartVisitTransferSteps();
-            StartTrackPosition();
             StartWatchChargeStage();
-            var msg = $"讀取到的電量為{Vehicle.BatteryLog.InitialSoc}";
-            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
+            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"讀取到的電量為{Vehicle.BatteryLog.InitialSoc}");
         }
 
         #endregion
@@ -291,7 +260,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         public void StartVisitTransferSteps()
         {
-            thdVisitTransferSteps = new Thread(VisitTransferSteps);
+            thdVisitTransferSteps = new Thread(VisitTransferStepsSwitchCase);
             thdVisitTransferSteps.IsBackground = true;
             thdVisitTransferSteps.Start();
 
@@ -310,7 +279,7 @@ namespace Mirle.Agv.Utmc.Controller
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow : ResumeVisitTransferSteps");
         }
 
-        private void VisitTransferSteps()
+        private void VisitTransferStepsSwitchCase()
         {
             while (true)
             {
@@ -470,6 +439,13 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
+        public void GetAllStatusReport()
+        {
+            RobotHandler.GetRobotAndCarrierSlotStatus();
+            MoveHandler.GetMoveStatus();
+            BatteryHandler.GetBatteryAndChargeStatus();
+        }
+
         #region Move Step
 
         private void MoveToAddress(string endAddressId, EnumMoveToEndReference endReference)
@@ -505,7 +481,8 @@ namespace Mirle.Agv.Utmc.Controller
                         LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"IsMoveEnd Need False And Cur IsMoveEnd = {Vehicle.MoveStatus.IsMoveEnd}");
                         if (Vehicle.MoveStatus.LastAddress.TransferPortDirection != EnumAddressDirection.None)
                         {
-                            localPackage.PartMove(EnumAseMoveCommandIsEnd.Begin);
+                            //localPackage.PartMove(EnumAseMoveCommandIsEnd.Begin);
+                            MoveHandler.PartMoveBegin();
                         }
 
                         agvcConnector.ClearAllReserve();
@@ -562,92 +539,52 @@ namespace Mirle.Agv.Utmc.Controller
                 {
                     Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToAddressWaitEnd;
 
-                    if (Vehicle.MainFlowConfig.IsSimulation)
+                    switch (Vehicle.TransferCommand.EnrouteState)
                     {
-                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Success;
-                        Vehicle.MoveStatus.IsMoveEnd = true;
-
-                        switch (Vehicle.TransferCommand.EnrouteState)
-                        {
-                            case CommandState.None:
+                        case CommandState.None:
+                            {
                                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位] Move end.");
-                                break;
-                            case CommandState.LoadEnroute:
+                                //localPackage.PartMove(EnumAseMoveCommandIsEnd.End);
+                                MoveHandler.PartMoveEnd();
+                            }
+                            break;
+                        case CommandState.LoadEnroute:
+                            {
                                 if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Empty && Vehicle.MainFlowConfig.SlotDisable != EnumSlotSelect.Left)
                                 {
                                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.左開蓋] Move end. Open slot left.");
-
                                     Vehicle.TransferCommand.SlotNumber = EnumSlotNumber.L;
+                                    //localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Left);
+                                    MoveHandler.PartMoveEnd(EnumSlotSelect.Left);
                                 }
                                 else if (Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty && Vehicle.MainFlowConfig.SlotDisable != EnumSlotSelect.Right)
                                 {
                                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.右開蓋] Move end. Open slot right.");
-
                                     Vehicle.TransferCommand.SlotNumber = EnumSlotNumber.R;
+                                    //localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Right);
+                                    MoveHandler.PartMoveEnd(EnumSlotSelect.Right);
                                 }
                                 else
                                 {
                                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[儲位已滿.無法取貨] Move end. No slot to load.");
-
                                     VehicleSlotFullFindFitUnloadCommand();
                                 }
-                                break;
-                            case CommandState.UnloadEnroute:
-                                if (Vehicle.TransferCommand.SlotNumber == EnumSlotNumber.L)
-                                {
-                                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.左開蓋] Move end. Open slot left.");
-                                }
-                                else
-                                {
-                                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.右開蓋] Move end. Open slot right.");
-                                }
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch (Vehicle.TransferCommand.EnrouteState)
-                        {
-                            case CommandState.None:
-                                {
-                                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位] Move end.");
-                                    localPackage.PartMove(EnumAseMoveCommandIsEnd.End);
-                                }
-                                break;
-                            case CommandState.LoadEnroute:
-                                {
-                                    if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Empty && Vehicle.MainFlowConfig.SlotDisable != EnumSlotSelect.Left)
-                                    {
-                                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.左開蓋] Move end. Open slot left.");
-                                        Vehicle.TransferCommand.SlotNumber = EnumSlotNumber.L;
-                                        localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Left);
-                                    }
-                                    else if (Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty && Vehicle.MainFlowConfig.SlotDisable != EnumSlotSelect.Right)
-                                    {
-                                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.右開蓋] Move end. Open slot right.");
-                                        Vehicle.TransferCommand.SlotNumber = EnumSlotNumber.R;
-                                        localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Right);
-                                    }
-                                    else
-                                    {
-                                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[儲位已滿.無法取貨] Move end. No slot to load.");
-                                        VehicleSlotFullFindFitUnloadCommand();
-                                    }
-                                }
-                                break;
-                            case CommandState.UnloadEnroute:
-                                if (Vehicle.TransferCommand.SlotNumber == EnumSlotNumber.L)
-                                {
-                                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.左開蓋] Move end. Open slot left.");
-                                    localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Left);
-                                }
-                                else
-                                {
-                                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.右開蓋] Move end. Open slot right.");
-                                    localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Right);
-                                }
-                                break;
-                        }
+                            }
+                            break;
+                        case CommandState.UnloadEnroute:
+                            if (Vehicle.TransferCommand.SlotNumber == EnumSlotNumber.L)
+                            {
+                                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.左開蓋] Move end. Open slot left.");
+                                //localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Left);
+                                MoveHandler.PartMoveEnd(EnumSlotSelect.Left);
+                            }
+                            else
+                            {
+                                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[二次定位.右開蓋] Move end. Open slot right.");
+                                //localPackage.PartMove(EnumAseMoveCommandIsEnd.End, EnumSlotSelect.Right);
+                                MoveHandler.PartMoveEnd(EnumSlotSelect.Right);
+                            }
+                            break;
                     }
                 }
                 else
@@ -1002,7 +939,7 @@ namespace Mirle.Agv.Utmc.Controller
                 IsAvoidMove = true;
                 agvcConnector.ClearAllReserve();
                 Vehicle.MovingGuide = aseMovingGuide;
-                SetupAseMovingGuideMovingSections();
+                SetupMovingGuideMovingSections();
                 agvcConnector.SetupNeedReserveSections();
                 agvcConnector.StatusChangeReport();
                 agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 0, "");
@@ -1061,6 +998,51 @@ namespace Mirle.Agv.Utmc.Controller
             return Vehicle.RobotStatus.IsHome && !Vehicle.IsCharging;
 
         }
+        public void SetupMovingGuideMovingSections()
+        {
+            try
+            {
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定.路線] Setup MovingGuide.");
+
+                MovingGuide movingGuide = new MovingGuide(Vehicle.MovingGuide);
+                movingGuide.MovingSections.Clear();
+                for (int i = 0; i < Vehicle.MovingGuide.GuideSectionIds.Count; i++)
+                {
+                    MapSection mapSection = new MapSection();
+                    string sectionId = movingGuide.GuideSectionIds[i].Trim();
+                    string addressId = movingGuide.GuideAddressIds[i + 1].Trim();
+                    if (!Vehicle.Mapinfo.sectionMap.ContainsKey(sectionId))
+                    {
+                        throw new Exception($"Map info has no this section ID.[{sectionId}]");
+                    }
+                    else if (!Vehicle.Mapinfo.addressMap.ContainsKey(addressId))
+                    {
+                        throw new Exception($"Map info has no this address ID.[{addressId}]");
+                    }
+
+                    mapSection = Vehicle.Mapinfo.sectionMap[sectionId];
+                    mapSection.CmdDirection = addressId == mapSection.TailAddress.Id ? EnumCommandDirection.Forward : EnumCommandDirection.Backward;
+                    movingGuide.MovingSections.Add(mapSection);
+                }
+                Vehicle.MovingGuide = movingGuide;
+                MoveHandler.SetMovingGuide(movingGuide);
+
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定.路線.成功] Setup MovingGuide OK.");
+            }
+            catch (Exception ex)
+            {
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定.路線.失敗] Setup MovingGuide Fail.");
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+                Vehicle.MovingGuide.MovingSections = new List<MapSection>();
+                SetAlarmFromAgvm(18);
+                StopClearAndReset();
+            }
+        }
+
+        public void SetPositionArgs(PositionArgs positionArgs)
+        {
+            MoveHandler_OnUpdatePositionArgsEvent(this, positionArgs);
+        }
 
         public void AgvcConnector_GetReserveOkUpdateMoveControlNextPartMovePosition(MapSection mapSection, EnumIsExecute keepOrGo)
         {
@@ -1069,27 +1051,7 @@ namespace Mirle.Agv.Utmc.Controller
                 int sectionIndex = Vehicle.MovingGuide.GuideSectionIds.FindIndex(x => x == mapSection.Id);
                 MapAddress address = Vehicle.Mapinfo.addressMap[Vehicle.MovingGuide.GuideAddressIds[sectionIndex + 1]];
 
-                int headAngle = (int)address.VehicleHeadAngle;
-                int speed = (int)mapSection.Speed;
-
-                if (Vehicle.MainFlowConfig.IsSimulation)
-                {
-                    Task.Run(() =>
-                    {
-                        SpinWait.SpinUntil(() => false, 1000);
-                        PositionArgs positionArgs = new PositionArgs()
-                        {
-                            EnumLocalArrival = EnumLocalArrival.Arrival,
-                            MapPosition = address.Position
-                        };
-                        localPackage.ReceivePositionArgsQueue.Enqueue(positionArgs);
-                    });
-                }
-                else
-                {
-                    localPackage.PartMove(address.Position, headAngle, speed, EnumAseMoveCommandIsEnd.None, keepOrGo, EnumSlotSelect.None);
-
-                }
+                MoveHandler.ReserveOkPartMove(mapSection);
 
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Send to MoveControl get reserve {mapSection.Id} ok , next end point [{address.Id}]({Convert.ToInt32(address.Position.X)},{Convert.ToInt32(address.Position.Y)}).");
             }
@@ -1097,6 +1059,222 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
+        }
+
+        private void MoveHandler_OnUpdatePositionArgsEvent(object sender, PositionArgs positionArgs)
+        {
+            try
+            {
+                bool reportAddressPass = positionArgs.EnumLocalArrival != EnumLocalArrival.Arrival || Vehicle.MoveStatus.LastMapPosition.MyDistance(positionArgs.MapPosition) > Vehicle.MapConfig.AddressAreaMm;
+
+
+                MovingGuide movingGuide = new MovingGuide(Vehicle.MovingGuide);
+                MoveStatus moveStatus = new MoveStatus(Vehicle.MoveStatus);
+                moveStatus.LastMapPosition = positionArgs.MapPosition;
+                CheckPositionUnchangeTimeout(positionArgs);
+
+                if (positionArgs.EnumLocalArrival == EnumLocalArrival.EndArrival || positionArgs.EnumLocalArrival == EnumLocalArrival.Fail)
+                {
+                    reportAddressPass = true;
+                }
+
+                string tempAddressId = Vehicle.MoveStatus.LastAddress.Id.Trim();
+
+                if (movingGuide.GuideSectionIds.Any())
+                {
+                    if (positionArgs.EnumLocalArrival == EnumLocalArrival.EndArrival)
+                    {
+                        moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap[movingGuide.ToAddressId];
+                        moveStatus.NearlySection = movingGuide.MovingSections.Last();
+                    }
+                    else
+                    {
+                        //var nearlyDistance = 999999;
+                        //var reserveOkSections = agvcConnector.queReserveOkSections.ToList();
+                        //if (!reserveOkSections.Any())
+                        //{
+                        //    foreach (string addressId in movingGuide.GuideAddressIds)
+                        //    {
+                        //        MapAddress mapAddress = Vehicle.Mapinfo.addressMap[addressId];
+                        //        var dis = moveStatus.LastMapPosition.MyDistance(mapAddress.Position);
+
+                        //        if (dis < nearlyDistance)
+                        //        {
+                        //            nearlyDistance = dis;
+                        //            moveStatus.NearlyAddress = mapAddress;
+                        //        }
+                        //    }
+
+                        //    foreach (string sectionId in movingGuide.GuideSectionIds)
+                        //    {
+                        //        MapSection mapSection = Vehicle.Mapinfo.sectionMap[sectionId];
+                        //        if (mapSection.InSection(moveStatus.NearlyAddress.Id))
+                        //        {
+                        //            moveStatus.NearlySection = mapSection;
+                        //        }
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    List<MapAddress> reserveOkAddrs = new List<MapAddress>();
+                        //    foreach (var mapSection in reserveOkSections)
+                        //    {
+                        //        reserveOkAddrs.AddRange(mapSection.InsideAddresses);
+                        //    }
+
+                        //    foreach (var mapAddress in reserveOkAddrs)
+                        //    {
+                        //        var dis = moveStatus.LastMapPosition.MyDistance(mapAddress.Position);
+
+                        //        if (dis < nearlyDistance)
+                        //        {
+                        //            nearlyDistance = dis;
+                        //            moveStatus.NearlyAddress = mapAddress;
+                        //        }
+                        //    }
+
+                        //    foreach (var mapSection in reserveOkSections)
+                        //    {
+                        //        if (mapSection.InSection(moveStatus.NearlyAddress.Id))
+                        //        {
+                        //            moveStatus.NearlySection = mapSection;
+                        //        }
+                        //    }
+
+                        //}
+
+
+                        moveStatus.NearlyAddress = (from addressId in movingGuide.GuideAddressIds
+                                                    select Vehicle.Mapinfo.addressMap[addressId]).ToList()
+                                                    .OrderBy(address => address.MyDistance(positionArgs.MapPosition)).ToArray()
+                                                    .First();
+
+                        moveStatus.NearlySection = (from sectionId in movingGuide.GuideSectionIds
+                                                    select Vehicle.Mapinfo.sectionMap[sectionId]).ToList()
+                                                    .FirstOrDefault(section => section.InSection(moveStatus.NearlyAddress));
+
+                    }
+
+                    moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlyAddress.MyDistance(moveStatus.NearlySection.HeadAddress.Position);
+                    moveStatus.LastAddress = moveStatus.NearlyAddress;
+                    moveStatus.LastSection = moveStatus.NearlySection;
+                    moveStatus.HeadDirection = positionArgs.HeadAngle;
+                    moveStatus.MovingDirection = positionArgs.MovingDirection;
+                    moveStatus.Speed = positionArgs.Speed;
+                    Vehicle.MoveStatus = moveStatus;
+
+                    UpdateMovePassSections(moveStatus.LastSection.Id);
+
+                    for (int i = 0; i < movingGuide.MovingSections.Count; i++)
+                    {
+                        if (movingGuide.MovingSections[i].Id == moveStatus.LastSection.Id)
+                        {
+                            Vehicle.MovingGuide.MovingSectionsIndex = i;
+                        }
+                    }
+                }
+                else
+                {
+                    moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap.Values.ToList()
+                                               .OrderBy(address => address.MyDistance(positionArgs.MapPosition)).ToArray()
+                                               .First();
+
+                    moveStatus.NearlySection = Vehicle.Mapinfo.sectionMap.Values.ToList()
+                                               .FirstOrDefault(section => section.InSection(moveStatus.NearlyAddress));
+
+                    moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlySection.HeadAddress.MyDistance(positionArgs.MapPosition);
+                    moveStatus.LastMapPosition = positionArgs.MapPosition;
+                    moveStatus.LastAddress = moveStatus.NearlyAddress;
+                    moveStatus.LastSection = moveStatus.NearlySection;
+                    moveStatus.HeadDirection = positionArgs.HeadAngle;
+                    moveStatus.MovingDirection = positionArgs.MovingDirection;
+                    moveStatus.Speed = positionArgs.Speed;
+                    Vehicle.MoveStatus = moveStatus;
+                }
+
+                if (reportAddressPass && tempAddressId != moveStatus.LastAddress.Id)
+                {
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[車輛.經過.站點] UpdatePositionArgs. [{positionArgs.EnumLocalArrival}][({(int)positionArgs.MapPosition.X},{(int)positionArgs.MapPosition.Y})][Direction={positionArgs.MovingDirection}][Speed={positionArgs.Speed}]");
+
+                    agvcConnector.ReportSectionPass();
+                }
+
+                switch (positionArgs.EnumLocalArrival)
+                {
+                    case EnumLocalArrival.Fail:
+                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Fail;
+                        Vehicle.MoveStatus.IsMoveEnd = true;
+                        break;
+                    case EnumLocalArrival.Arrival:
+                        break;
+                    case EnumLocalArrival.EndArrival:
+                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Success;
+                        Vehicle.MoveStatus.IsMoveEnd = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                MoveHandler.SetMoveStatusFrom(Vehicle.MoveStatus);
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void MoveHandler_OnUpdateMoveStatusEvent(object sender, MoveStatus moveStatus)
+        {
+            Vehicle.MoveStatus = moveStatus;
+            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[移動.狀態.改變] UpdateMoveStatus:[{Vehicle.MoveStatus.EnumMoveState}][Address={Vehicle.MoveStatus.LastAddress.Id}][Section={Vehicle.MoveStatus.LastSection.Id}]");
+        }
+
+        private void MoveHandler_OnOpPauseOrResumeEvent(object sender, bool e)
+        {
+            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[遙控器.狀態.改變] MoveHandler_OnOpPauseOrResumeEvent [IsPause={e}].");
+
+            if (e)
+            {
+                Vehicle.OpPauseStatus = VhStopSingle.On;
+                agvcConnector.StatusChangeReport();
+            }
+            else
+            {
+                Vehicle.OpPauseStatus = VhStopSingle.Off;
+                Vehicle.ResetPauseFlags();
+                ResumeMiddler();
+            }
+        }
+
+        private void CheckPositionUnchangeTimeout(PositionArgs positionArgs)
+        {
+            if (!Vehicle.MoveStatus.IsMoveEnd)
+            {
+                if (LastIdlePosition.Position.MyDistance(positionArgs.MapPosition) <= Vehicle.MainFlowConfig.IdleReportRangeMm)
+                {
+                    if ((DateTime.Now - LastIdlePosition.TimeStamp).TotalMilliseconds >= Vehicle.MainFlowConfig.IdleReportIntervalMs)
+                    {
+                        UpdateLastIdlePositionAndTimeStamp(positionArgs);
+                        SetAlarmFromAgvm(55);
+                    }
+                }
+                else
+                {
+                    UpdateLastIdlePositionAndTimeStamp(positionArgs);
+                }
+            }
+            else
+            {
+                LastIdlePosition.TimeStamp = DateTime.Now;
+            }
+        }
+
+        private void UpdateLastIdlePositionAndTimeStamp(PositionArgs positionArgs)
+        {
+            LastIdlePosition lastIdlePosition = new LastIdlePosition();
+            lastIdlePosition.Position = positionArgs.MapPosition;
+            lastIdlePosition.TimeStamp = DateTime.Now;
+            LastIdlePosition = lastIdlePosition;
         }
 
         #endregion
@@ -1734,11 +1912,11 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void RobotHandler_OnUpdateRobotStatusEvent(object sender, RobotStatus aseRobotStatus)
+        private void RobotHandler_OnUpdateRobotStatusEvent(object sender, RobotStatus robotStatus)
         {
             try
             {
-                Vehicle.RobotStatus = aseRobotStatus;
+                Vehicle.RobotStatus = robotStatus;
 
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[手臂.狀態.改變] UpdateRobotStatus:[{Vehicle.RobotStatus.EnumRobotState}][RobotHome={Vehicle.RobotStatus.IsHome}]");
             }
@@ -2056,7 +2234,7 @@ namespace Mirle.Agv.Utmc.Controller
 
                 if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Loading || Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
                 {
-                    localPackage.ReadCarrierId();
+                    RobotHandler.GetRobotAndCarrierSlotStatus();
                 }
 
                 foreach (var transCmd in Vehicle.mapTransferCommands.Values.ToList())
@@ -2671,257 +2849,6 @@ namespace Mirle.Agv.Utmc.Controller
 
         #endregion
 
-        #region Thd Track Position
-
-        private void TrackPosition()
-        {
-            while (true)
-            {
-                try
-                {
-                    //if (IsTrackPositionPause)
-                    //{
-                    //    SpinWait.SpinUntil(() => !IsTrackPositionPause, Vehicle.MainFlowConfig.TrackPositionSleepTimeMs);
-                    //    continue;
-                    //}
-
-                    if (localPackage.ReceivePositionArgsQueue.Any())
-                    {
-                        localPackage.ReceivePositionArgsQueue.TryDequeue(out PositionArgs positionArgs);
-                        DealAsePositionArgs(positionArgs);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-                    Thread.Sleep(1);
-                }
-
-                Thread.Sleep(Vehicle.MainFlowConfig.TrackPositionSleepTimeMs);
-                //SpinWait.SpinUntil(() => false, Vehicle.MainFlowConfig.TrackPositionSleepTimeMs);
-            }
-        }
-
-        private void DealAsePositionArgs(PositionArgs positionArgs)
-        {
-            try
-            {
-                MovingGuide movingGuide = new MovingGuide(Vehicle.MovingGuide);
-                MoveStatus moveStatus = new MoveStatus(Vehicle.MoveStatus);
-                moveStatus.LastMapPosition = positionArgs.MapPosition;
-                CheckPositionUnchangeTimeout(positionArgs);
-
-                if (movingGuide.GuideSectionIds.Any())
-                {
-                    if (positionArgs.EnumLocalArrival == EnumLocalArrival.EndArrival)
-                    {
-                        moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap[movingGuide.ToAddressId];
-                        moveStatus.NearlySection = movingGuide.MovingSections.Last();
-                        moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlySection.HeadAddress.MyDistance(moveStatus.NearlyAddress.Position);
-                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Update Position. [Section = {moveStatus.NearlySection.Id}][Address = {moveStatus.NearlyAddress.Id}].");
-                    }
-                    else
-                    {
-                        var nearlyDistance = 999999;
-                        var reserveOkSections = agvcConnector.queReserveOkSections.ToList();
-                        if (!reserveOkSections.Any())
-                        {
-                            foreach (string addressId in movingGuide.GuideAddressIds)
-                            {
-                                MapAddress mapAddress = Vehicle.Mapinfo.addressMap[addressId];
-                                var dis = moveStatus.LastMapPosition.MyDistance(mapAddress.Position);
-
-                                if (dis < nearlyDistance)
-                                {
-                                    nearlyDistance = dis;
-                                    moveStatus.NearlyAddress = mapAddress;
-                                }
-                            }
-
-                            foreach (string sectionId in movingGuide.GuideSectionIds)
-                            {
-                                MapSection mapSection = Vehicle.Mapinfo.sectionMap[sectionId];
-                                if (mapSection.InSection(moveStatus.NearlyAddress.Id))
-                                {
-                                    moveStatus.NearlySection = mapSection;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            List<MapAddress> reserveOkAddrs = new List<MapAddress>();
-                            foreach (var mapSection in reserveOkSections)
-                            {
-                                reserveOkAddrs.AddRange(mapSection.InsideAddresses);
-                            }
-
-                            foreach (var mapAddress in reserveOkAddrs)
-                            {
-                                var dis = moveStatus.LastMapPosition.MyDistance(mapAddress.Position);
-
-                                if (dis < nearlyDistance)
-                                {
-                                    nearlyDistance = dis;
-                                    moveStatus.NearlyAddress = mapAddress;
-                                }
-                            }
-
-                            foreach (var mapSection in reserveOkSections)
-                            {
-                                if (mapSection.InSection(moveStatus.NearlyAddress.Id))
-                                {
-                                    moveStatus.NearlySection = mapSection;
-                                }
-                            }
-
-                        }
-
-                        moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlyAddress.MyDistance(moveStatus.NearlySection.HeadAddress.Position);
-
-                        if (moveStatus.NearlyAddress.Id != moveStatus.LastAddress.Id)
-                        {
-                            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Update Position. [Section = {moveStatus.NearlySection.Id}][Address = {moveStatus.NearlyAddress.Id}].");
-                        }
-                    }
-
-                    moveStatus.LastAddress = moveStatus.NearlyAddress;
-                    moveStatus.LastSection = moveStatus.NearlySection;
-                    moveStatus.HeadDirection = positionArgs.HeadAngle;
-                    moveStatus.MovingDirection = positionArgs.MovingDirection;
-                    moveStatus.Speed = positionArgs.Speed;
-                    Vehicle.MoveStatus = moveStatus;
-                    agvcConnector.ReportSectionPass();
-
-                    UpdateMovePassSections(moveStatus.LastSection.Id);
-
-                    for (int i = 0; i < movingGuide.MovingSections.Count; i++)
-                    {
-                        if (movingGuide.MovingSections[i].Id == moveStatus.LastSection.Id)
-                        {
-                            Vehicle.MovingGuide.MovingSectionsIndex = i;
-                        }
-                    }
-                }
-                else
-                {
-                    moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap.Values.ToList().OrderBy(address => address.MyDistance(positionArgs.MapPosition)).ToArray().First();
-                    moveStatus.NearlySection = Vehicle.Mapinfo.sectionMap.Values.ToList().FirstOrDefault(section => section.InSection(moveStatus.NearlyAddress));
-                    moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlySection.HeadAddress.MyDistance(positionArgs.MapPosition);
-                    moveStatus.LastMapPosition = positionArgs.MapPosition;
-                    if (moveStatus.NearlyAddress.Id != moveStatus.LastAddress.Id)
-                    {
-                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Update Position. [LastSection = {moveStatus.LastSection.Id}][LastAddress = {moveStatus.LastAddress.Id}] to [NearlySection = {moveStatus.NearlySection.Id}][NearlyAddress = {moveStatus.NearlyAddress.Id}]");
-                    }
-                    moveStatus.LastAddress = moveStatus.NearlyAddress;
-                    moveStatus.LastSection = moveStatus.NearlySection;
-                    moveStatus.HeadDirection = positionArgs.HeadAngle;
-                    moveStatus.MovingDirection = positionArgs.MovingDirection;
-                    moveStatus.Speed = positionArgs.Speed;
-                    Vehicle.MoveStatus = moveStatus;
-                    agvcConnector.ReportSectionPass();
-                }
-
-                switch (positionArgs.EnumLocalArrival)
-                {
-                    case EnumLocalArrival.Fail:
-                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Fail;
-                        Vehicle.MoveStatus.IsMoveEnd = true;
-                        break;
-                    case EnumLocalArrival.Arrival:
-                        break;
-                    case EnumLocalArrival.EndArrival:
-                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Success;
-                        Vehicle.MoveStatus.IsMoveEnd = true;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
-        private void CheckPositionUnchangeTimeout(PositionArgs positionArgs)
-        {
-            if (!Vehicle.MoveStatus.IsMoveEnd)
-            {
-                if (LastIdlePosition.Position.MyDistance(positionArgs.MapPosition) <= Vehicle.MainFlowConfig.IdleReportRangeMm)
-                {
-                    if ((DateTime.Now - LastIdlePosition.TimeStamp).TotalMilliseconds >= Vehicle.MainFlowConfig.IdleReportIntervalMs)
-                    {
-                        UpdateLastIdlePositionAndTimeStamp(positionArgs);
-                        SetAlarmFromAgvm(55);
-                    }
-                }
-                else
-                {
-                    UpdateLastIdlePositionAndTimeStamp(positionArgs);
-                }
-            }
-            else
-            {
-                LastIdlePosition.TimeStamp = DateTime.Now;
-            }
-        }
-
-        private void UpdateLastIdlePositionAndTimeStamp(PositionArgs positionArgs)
-        {
-            LastIdlePosition lastIdlePosition = new LastIdlePosition();
-            lastIdlePosition.Position = positionArgs.MapPosition;
-            lastIdlePosition.TimeStamp = DateTime.Now;
-            LastIdlePosition = lastIdlePosition;
-        }
-
-        public void StartTrackPosition()
-        {
-            thdTrackPosition = new Thread(TrackPosition);
-            thdTrackPosition.IsBackground = true;
-            thdTrackPosition.Start();
-        }
-
-        #endregion
-
-        public void SetupAseMovingGuideMovingSections()
-        {
-            try
-            {
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定 路線] Setup MovingGuide.");
-
-                MovingGuide aseMovingGuide = new MovingGuide(Vehicle.MovingGuide);
-                aseMovingGuide.MovingSections.Clear();
-                for (int i = 0; i < Vehicle.MovingGuide.GuideSectionIds.Count; i++)
-                {
-                    MapSection mapSection = new MapSection();
-                    string sectionId = aseMovingGuide.GuideSectionIds[i].Trim();
-                    string addressId = aseMovingGuide.GuideAddressIds[i + 1].Trim();
-                    if (!Vehicle.Mapinfo.sectionMap.ContainsKey(sectionId))
-                    {
-                        throw new Exception($"Map info has no this section ID.[{sectionId}]");
-                    }
-                    else if (!Vehicle.Mapinfo.addressMap.ContainsKey(addressId))
-                    {
-                        throw new Exception($"Map info has no this address ID.[{addressId}]");
-                    }
-
-                    mapSection = Vehicle.Mapinfo.sectionMap[sectionId];
-                    mapSection.CmdDirection = addressId == mapSection.TailAddress.Id ? EnumCommandDirection.Forward : EnumCommandDirection.Backward;
-                    aseMovingGuide.MovingSections.Add(mapSection);
-                }
-                Vehicle.MovingGuide = aseMovingGuide;
-
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定 路線 成功] Setup MovingGuide OK.");
-            }
-            catch (Exception ex)
-            {
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定 路線 失敗] Setup MovingGuide Fail.");
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-                Vehicle.MovingGuide.MovingSections = new List<MapSection>();
-                SetAlarmFromAgvm(18);
-                StopClearAndReset();
-            }
-        }
         private void UpdateMovePassSections(string id)
         {
             int getReserveOkSectionIndex = 0;
@@ -2945,7 +2872,7 @@ namespace Mirle.Agv.Utmc.Controller
         }
         public void StopVehicle()
         {
-            localPackage.MoveStop();
+            MoveHandler.StopMove();
             RobotHandler.ClearRobotCommand();
             BatteryHandler.StopCharge();
 
@@ -2983,7 +2910,7 @@ namespace Mirle.Agv.Utmc.Controller
 
                 Vehicle.PauseFlags[pauseType] = true;
                 PauseTransfer();
-                localPackage.MovePause();
+                MoveHandler.PauseMove();
                 agvcConnector.PauseReply(iSeqNum, (int)EnumAgvcReplyCode.Accept, PauseEvent.Pause);
                 agvcConnector.StatusChangeReport();
             }
@@ -3028,7 +2955,7 @@ namespace Mirle.Agv.Utmc.Controller
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[執行.續行] [{PauseEvent.Continue}][{pauseType}]");
 
             agvcConnector.PauseReply(iSeqNum, (int)EnumAgvcReplyCode.Accept, PauseEvent.Continue);
-            localPackage.MoveContinue();
+            MoveHandler.ResumeMove();
             ResumeTransfer();
             agvcConnector.StatusChangeReport();
         }
@@ -3037,7 +2964,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[執行.續行] By Op Resume.");
 
-            localPackage.MoveContinue();
+            MoveHandler.ResumeMove();
             ResumeTransfer();
             agvcConnector.StatusChangeReport();
         }
@@ -3059,7 +2986,7 @@ namespace Mirle.Agv.Utmc.Controller
                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[放棄.當前.命令] TransferComplete [{targetAbortCmd.CompleteStatus}].");
 
                     agvcConnector.ClearAllReserve();
-                    localPackage.MoveStop();
+                    MoveHandler.StopMove();
                     Vehicle.MovingGuide = new MovingGuide();
                     Vehicle.TransferCommand.CompleteStatus = GetCompleteStatusFromCancelRequest(receive.CancelAction);
                     Vehicle.TransferCommand.TransferStep = EnumTransferStep.TransferComplete;
@@ -3132,70 +3059,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        #region AsePackage
-
-        private void LocalBatteryControl_OnBatteryPercentageChangeEvent(object sender, double batteryPercentage)
-        {
-            try
-            {
-                Vehicle.BatteryLog.InitialSoc = (int)batteryPercentage;
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
-        public void ReadCarrierId()
-        {
-            try
-            {
-                localPackage.ReadCarrierId();
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
-        private void LocalPackage_OnUpdateSlotStatusEvent(object sender, CarrierSlotStatus slotStatus)
-        {
-            try
-            {
-                if (slotStatus.ManualDeleteCST)
-                {
-                    slotStatus.CarrierId = "";
-                    slotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Empty;
-                    switch (slotStatus.SlotNumber)
-                    {
-                        case EnumSlotNumber.L:
-                            Vehicle.CarrierSlotLeft = slotStatus;
-                            break;
-                        case EnumSlotNumber.R:
-                            Vehicle.CarrierSlotRight = slotStatus;
-                            break;
-                    }
-
-                    agvcConnector.Send_Cmd136_CstRemove(slotStatus.SlotNumber);
-                }
-                else
-                {
-                    switch (slotStatus.SlotNumber)
-                    {
-                        case EnumSlotNumber.L:
-                            Vehicle.CarrierSlotLeft = slotStatus;
-                            break;
-                        case EnumSlotNumber.R:
-                            Vehicle.CarrierSlotRight = slotStatus;
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
+        #region AsePackage        
 
         public object _ModeChangeLocker = new object();
 
@@ -3414,24 +3278,6 @@ namespace Mirle.Agv.Utmc.Controller
             agvcConnector.StatusChangeReport();
         }
 
-        private void LocalPackage_OnOpPauseOrResumeEvent(object sender, bool e)
-        {
-            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"AsePackage_OnOpPauseOrResumeEvent [{e}].");
-
-            if (e)
-            {
-                Vehicle.OpPauseStatus = VhStopSingle.On;
-                agvcConnector.StatusChangeReport();
-            }
-            else
-            {
-                Vehicle.OpPauseStatus = VhStopSingle.Off;
-                Vehicle.ResetPauseFlags();
-                ResumeMiddler();
-            }
-
-        }
-
         #endregion
 
         #region Set / Reset Alarm
@@ -3441,7 +3287,7 @@ namespace Mirle.Agv.Utmc.Controller
             if (!alarmHandler.dicHappeningAlarms.ContainsKey(errorCode))
             {
                 alarmHandler.SetAlarm(errorCode);
-                localPackage.SetAlarmCode(errorCode, true);
+                //localPackage.SetAlarmCode(errorCode, true);
                 var IsAlarm = alarmHandler.IsAlarm(errorCode);
 
                 agvcConnector.SetlAlarmToAgvc(errorCode, IsAlarm);
@@ -3463,14 +3309,14 @@ namespace Mirle.Agv.Utmc.Controller
         public void ResetAllAlarmsFromAgvm()
         {
             alarmHandler.ResetAllAlarms();
-            localPackage.ResetAllAlarmCode();
+            //localPackage.ResetAllAlarmCode();
             agvcConnector.ResetAllAlarmsToAgvc();
         }
 
         public void ResetAllAlarmsFromAgvc()
         {
             alarmHandler.ResetAllAlarms();
-            localPackage.ResetAllAlarmCode();
+            //localPackage.ResetAllAlarmCode();
         }
 
         public void ResetAllAlarmsFromAgvl()
@@ -3482,6 +3328,16 @@ namespace Mirle.Agv.Utmc.Controller
         #endregion
 
         #region Log
+
+        private void IMessageHandler_OnLogErrorEvent(object sender, Tools.MessageHandlerArgs e)
+        {
+            LogException(e.ClassMethodName, e.Message);
+        }
+
+        private void IMessageHandler_OnLogDebugEvent(object sender, Tools.MessageHandlerArgs e)
+        {
+            LogDebug(e.ClassMethodName, e.Message);
+        }
 
         public void AppendDebugLog(string msg)
         {

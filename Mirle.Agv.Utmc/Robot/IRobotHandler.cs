@@ -1,4 +1,5 @@
 ﻿using Mirle.Agv.Utmc.Model;
+using Mirle.Agv.Utmc.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Robot
 {
-    public interface IRobotHandler
+    public interface IRobotHandler : IMessageHandler
     {
         public event EventHandler<Model.CarrierSlotStatus> OnUpdateCarrierSlotStatusEvent;
         public event EventHandler<Model.RobotStatus> OnUpdateRobotStatusEvent;

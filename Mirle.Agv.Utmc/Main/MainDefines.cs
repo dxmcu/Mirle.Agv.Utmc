@@ -1,14 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Mirle.Agv.Utmc
+﻿namespace Mirle.Agv.Utmc
 {
     #region MainEnums
     public enum EnumSectionType
@@ -281,13 +271,5 @@ namespace Mirle.Agv.Utmc
         Unknow
     }
 
-    #endregion    
-
-    public static class ExtensionMethods
-    {
-        public static string GetJsonInfo(this Object obj)
-        {
-            return JsonConvert.SerializeObject(obj, Formatting.Indented);
-        }
-    }
+    #endregion      
 }

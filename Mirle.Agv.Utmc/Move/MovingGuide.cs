@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using com.mirle.aka.sc.ProtocolFormat.ase.agvMessage;
+using Mirle.Agv.Utmc.Tools;
 using Newtonsoft.Json;
 
 namespace Mirle.Agv.Utmc.Model

@@ -1,6 +1,7 @@
 ﻿using Mirle.Agv.Utmc.Controller;
 using Mirle.Agv.Utmc.Model;
 using Mirle.Agv.Utmc.Model.TransferSteps;
+using Mirle.Agv.Utmc.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,8 @@ namespace Mirle.Agv.Utmc.Robot
         public event EventHandler<CarrierSlotStatus> OnUpdateCarrierSlotStatusEvent;
         public event EventHandler<RobotStatus> OnUpdateRobotStatusEvent;
         public event EventHandler<EnumRobotEndType> OnRobotEndEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
 
         public void ClearRobotCommand()
         {

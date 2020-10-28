@@ -1345,7 +1345,7 @@ namespace Mirle.Agv.Utmc.View
             this.btnRefreshBatteryState.TabIndex = 41;
             this.btnRefreshBatteryState.Text = "更新電池狀態";
             this.btnRefreshBatteryState.UseVisualStyleBackColor = true;
-            this.btnRefreshBatteryState.Click += new System.EventHandler(this.AseRobotControlForm_RefreshBatteryState);
+            this.btnRefreshBatteryState.Click += new System.EventHandler(this.RobotHandlerAndBatteryHandlerForm_RefreshBatteryState);
             // 
             // ucBatteryCharging
             // 

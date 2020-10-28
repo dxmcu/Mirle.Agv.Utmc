@@ -70,15 +70,6 @@ namespace Mirle.Agv.Utmc.View
                 case "BatteryLog":
                     txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.BatteryLog, Formatting.Indented);
                     break;
-
-                //AsePackage Config
-                
-                case "MoveConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.MoveConfig, Formatting.Indented);
-                    break;
-                case "AseBatteryConfig":
-                    txtJsonStringConfig.Text = JsonConvert.SerializeObject(Vehicle.LocalPackageBatteryConfig, Formatting.Indented);
-                    break;
                 default:
                     break;
             }
@@ -101,15 +92,6 @@ namespace Mirle.Agv.Utmc.View
                     case "BatteryLog":
                         Vehicle.BatteryLog = JsonConvert.DeserializeObject<BatteryLog>(txtJsonStringConfig.Text);
                         break;
-
-                    //AsePackage Config
-                    case "MoveConfig":
-                        Vehicle.MoveConfig = JsonConvert.DeserializeObject<MoveConfig>(txtJsonStringConfig.Text);
-                        break;
-                    case "LocalPackageBatteryConfig":
-                        Vehicle.LocalPackageBatteryConfig = JsonConvert.DeserializeObject<LocalPackageBatteryConfig>(txtJsonStringConfig.Text);
-                        break;
-
                     default:
                         break;
                 }

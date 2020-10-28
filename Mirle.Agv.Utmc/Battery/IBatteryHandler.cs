@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Battery
 {
-    public interface IBatteryHandler
+    public interface IBatteryHandler : Tools.IMessageHandler
     {
         public event EventHandler<Model.BatteryStatus> OnUpdateBatteryStatusEvent;
         public event EventHandler<bool> OnUpdateChargeStatusEvent;

@@ -1,4 +1,5 @@
 ﻿using Mirle.Agv.Utmc.Model;
+using Mirle.Agv.Utmc.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace Mirle.Agv.Utmc.Battery
     {
         public event EventHandler<BatteryStatus> OnUpdateBatteryStatusEvent;
         public event EventHandler<bool> OnUpdateChargeStatusEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
 
         public BatteryStatus BatteryStatus { get; set; }
         public bool IsCharging { get; set; }
@@ -47,7 +50,14 @@ namespace Mirle.Agv.Utmc.Battery
                         OnUpdateBatteryStatusEvent?.Invoke(this, BatteryStatus);
                     }
                 }
-                catch (Exception) { }
+                catch (Exception ex)
+                {
+                    OnLogErrorEvent?.Invoke(this, new MessageHandlerArgs()
+                    {
+                        ClassMethodName = GetType().Name + ":" + System.Reflection.MethodBase.GetCurrentMethod().Name,
+                        Message = ex.Message
+                    });
+                }
 
                 System.Threading.Thread.Sleep(2000);
 
@@ -58,14 +68,18 @@ namespace Mirle.Agv.Utmc.Battery
 
         public void StopCharge()
         {
-            Task.Run(() =>
+            if (IsCharging)
             {
-                if (IsCharging)
+                Task.Run(() =>
                 {
                     System.Threading.Thread.Sleep(2000);
                     IsCharging = false;
-                }
-            });
+                });
+            }
+            else
+            {
+                OnUpdateChargeStatusEvent?.Invoke(this, IsCharging);
+            }
         }
 
         public void GetBatteryAndChargeStatus()

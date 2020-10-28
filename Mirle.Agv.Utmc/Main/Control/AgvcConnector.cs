@@ -1873,7 +1873,7 @@ namespace Mirle.Agv.Utmc.Controller
                 Vehicle.MovingGuide = new MovingGuide(response);
                 //ClearAllReserve();
                 Vehicle.MoveStatus.IsMoveEnd = false;
-                mainFlowHandler.SetupAseMovingGuideMovingSections();
+                mainFlowHandler.SetupMovingGuideMovingSections();
                 SetupNeedReserveSections();
                 StatusChangeReport();
                 mainFlowHandler.LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"IsMoveEnd Need False And Cur IsMoveEnd = {Vehicle.MoveStatus.IsMoveEnd}");

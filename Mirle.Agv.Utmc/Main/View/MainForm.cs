@@ -23,7 +23,6 @@ namespace Mirle.Agv.Utmc.View
     {
         public MainFlowHandler mainFlowHandler;
         public MainForm mainForm;
-        private LocalPackage localPackage;
         private AgvcConnector agvcConnector;
         private AgvcConnectorForm agvcConnectorForm;
         private AlarmForm alarmForm;
@@ -69,7 +68,6 @@ namespace Mirle.Agv.Utmc.View
             InitializeComponent();
             this.mainFlowHandler = mainFlowHandler;
             alarmHandler = mainFlowHandler.alarmHandler;
-            localPackage = mainFlowHandler.localPackage;
             agvcConnector = mainFlowHandler.agvcConnector;
             mainForm = this;
         }
@@ -81,9 +79,7 @@ namespace Mirle.Agv.Utmc.View
             InitialPanels();
             ResetImageAndPb();
             InitialSoc();
-            localPackage.AllAgvlStatusReportRequest();
-            localPackage.SendPositionReportRequest();
-            localPackage.SendBatteryStatusRequest();
+            mainFlowHandler.GetAllStatusReport();
             InitialConnectionAndCarrierStatus();
             InitialDisableSlotCheckBox();
             btnKeyInPosition.Visible = Vehicle.MainFlowConfig.IsSimulation;
@@ -224,7 +220,7 @@ namespace Mirle.Agv.Utmc.View
 
             if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Loading || Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
             {
-                mainFlowHandler.ReadCarrierId();
+                mainFlowHandler.RobotHandler.GetRobotAndCarrierSlotStatus();
             }
         }
 
@@ -491,11 +487,9 @@ namespace Mirle.Agv.Utmc.View
         private void btnRefreshStatus_Click(object sender, EventArgs e)
         {
             btnRefreshStatus.Enabled = false;
-            localPackage.AllAgvlStatusReportRequest();
-            SpinWait.SpinUntil(() => false, 50);
-            localPackage.SendPositionReportRequest();
-            SpinWait.SpinUntil(() => false, 50);
-            localPackage.SendBatteryStatusRequest();
+
+            mainFlowHandler.GetAllStatusReport();            
+           
             btnRefreshStatus.Enabled = true;
         }
 
@@ -503,11 +497,7 @@ namespace Mirle.Agv.Utmc.View
         {
             btnRefreshMoveState.Enabled = false;
 
-            localPackage.SendPositionReportRequest();
-
-            SpinWait.SpinUntil(() => false, 50);
-
-            localPackage.RefreshMoveState();
+            mainFlowHandler.MoveHandler.GetMoveStatus();
 
             btnRefreshMoveState.Enabled = true;
         }
@@ -518,11 +508,7 @@ namespace Mirle.Agv.Utmc.View
             {
                 btnRefreshRobotState.Enabled = false;
 
-                localPackage.RefreshRobotState();
-
-                SpinWait.SpinUntil(() => false, 50);
-
-                localPackage.RefreshCarrierSlotState();
+                mainFlowHandler.RobotHandler.GetRobotAndCarrierSlotStatus();
 
                 btnRefreshRobotState.Enabled = true;
             }
@@ -532,13 +518,13 @@ namespace Mirle.Agv.Utmc.View
             }
         }
 
-        private void AseRobotControlForm_RefreshBatteryState(object sender, EventArgs e)
+        private void RobotHandlerAndBatteryHandlerForm_RefreshBatteryState(object sender, EventArgs e)
         {
             try
             {
                 var btn = sender as Button;
                 btn.Enabled = false;
-                localPackage.AllAgvlStatusReportRequest();
+                mainFlowHandler.BatteryHandler.GetBatteryAndChargeStatus();
                 System.Threading.Thread.Sleep(50);
                 btn.Enabled = true;
             }
@@ -1491,7 +1477,7 @@ namespace Mirle.Agv.Utmc.View
                     EnumLocalArrival = EnumLocalArrival.Arrival,
                     MapPosition = new MapPosition(posX, posY)
                 };
-                localPackage.ReceivePositionArgsQueue.Enqueue(positionArgs);
+                mainFlowHandler.SetPositionArgs(positionArgs);
             }
             catch (Exception ex)
             {

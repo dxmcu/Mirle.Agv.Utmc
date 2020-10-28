@@ -79,11 +79,6 @@ namespace Mirle.Agv.Utmc.Model
         public AlarmConfig AlarmConfig { get; set; } = new AlarmConfig();
         public BatteryLog BatteryLog { get; set; } = new BatteryLog();
 
-        // AsePackage Configs
-
-        public LocalPackageBatteryConfig LocalPackageBatteryConfig { get; set; } = new LocalPackageBatteryConfig();
-        public MoveConfig MoveConfig { get; set; } = new MoveConfig();
-
         #endregion
 
         private Vehicle() { }

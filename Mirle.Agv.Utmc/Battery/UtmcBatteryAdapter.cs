@@ -1,4 +1,5 @@
 ﻿using Mirle.Agv.Utmc.Model;
+using Mirle.Agv.Utmc.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace Mirle.Agv.Utmc.Battery
     {
         public event EventHandler<BatteryStatus> OnUpdateBatteryStatusEvent;
         public event EventHandler<bool> OnUpdateChargeStatusEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
+        public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
 
         public void GetBatteryAndChargeStatus()
         {

@@ -123,13 +123,14 @@
     <Compile Include="Battery\NullObjBatteryHandler.cs" />
     <Compile Include="Battery\UtmcBatteryAdapter.cs" />
     <Compile Include="Customer\LocalPackage\Control\LocalPackage.cs" />
-    <Compile Include="Customer\LocalPackage\Model\PositionArgs.cs" />
-    <Compile Include="Customer\LocalPackage\Model\Configs\LocalPackageBatteryConfig.cs" />
-    <Compile Include="Customer\LocalPackage\Model\BatteryStatus.cs" />
-    <Compile Include="Customer\LocalPackage\Model\CarrierSlotStatus.cs" />
-    <Compile Include="Customer\LocalPackage\Model\Configs\MoveConfig.cs" />
-    <Compile Include="Customer\LocalPackage\Model\MovingGuide.cs" />
-    <Compile Include="Customer\LocalPackage\Model\RobotStatus.cs" />
+    <Compile Include="Move\PositionArgs.cs" />
+    <Compile Include="Battery\BatteryStatus.cs" />
+    <Compile Include="Move\IMoveHandler.cs" />
+    <Compile Include="Move\NullObjMoveHandler.cs" />
+    <Compile Include="Move\UtmcMoveAdapter.cs" />
+    <Compile Include="Robot\CarrierSlotStatus.cs" />
+    <Compile Include="Move\MovingGuide.cs" />
+    <Compile Include="Robot\RobotStatus.cs" />
     <Compile Include="Main\Control\UserAgent.cs" />
     <Compile Include="Main\Model\Configs\BatteryLog.cs" />
     <Compile Include="Main\Model\Configs\InitialConfig.cs" />
@@ -139,7 +140,7 @@
     <Compile Include="Main\Model\Map\MapPortId.cs" />
     <Compile Include="Main\Model\Map\MapSectionBeamDisable.cs" />
     <Compile Include="Main\Model\Map\MapVector.cs" />
-    <Compile Include="Customer\LocalPackage\Model\MoveStatus.cs" />
+    <Compile Include="Move\MoveStatus.cs" />
     <Compile Include="Main\Model\TransferCommand\MoveCmdInfo.cs" />
     <Compile Include="Main\Model\TransferCommand\RobotCommand.cs" />
     <Compile Include="Main\Model\VehicleIntegrateStatus.cs" />
@@ -218,6 +219,9 @@
     <Compile Include="Robot\IRobotHandler.cs" />
     <Compile Include="Robot\NullObjRobotHandler.cs" />
     <Compile Include="Robot\UtmcRobotAdapter.cs" />
+    <Compile Include="Tools\ExtensionMethods.cs" />
+    <Compile Include="Tools\IMessageHandler.cs" />
+    <Compile Include="Tools\MessageHandlerArgs.cs" />
     <EmbeddedResource Include="Main\View\ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -313,7 +317,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Customer\LocalPackage\Model\" />
     <Folder Include="Customer\LocalPackage\View\" />
+    <Folder Include="SafetySensor\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
