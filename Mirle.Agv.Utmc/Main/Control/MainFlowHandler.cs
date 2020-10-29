@@ -103,26 +103,36 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 //Main Configs 
-                int minThreadSleep = 100;
-                Vehicle.MainFlowConfig = ReadFromJsonFilename<MainFlowConfig>("MainFlowConfig.json");
+                string filename = "MainFlowConfig.json";
+                Vehicle.MainFlowConfig = ReadFromJsonFilename<MainFlowConfig>(filename);
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
                     Vehicle.LoginLevel = EnumLoginLevel.Admin;
                 }
+                int minThreadSleep = 100;
                 Vehicle.MainFlowConfig.VisitTransferStepsSleepTimeMs = Math.Max(Vehicle.MainFlowConfig.VisitTransferStepsSleepTimeMs, minThreadSleep);
                 Vehicle.MainFlowConfig.TrackPositionSleepTimeMs = Math.Max(Vehicle.MainFlowConfig.TrackPositionSleepTimeMs, minThreadSleep);
                 Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs = Math.Max(Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs, minThreadSleep);
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
-                Vehicle.MapConfig = ReadFromJsonFilename<MapConfig>("MapConfig.json");
+                filename = "MapConfig.json";
+                Vehicle.MapConfig = ReadFromJsonFilename<MapConfig>(filename);
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
-                Vehicle.AgvcConnectorConfig = ReadFromJsonFilename<AgvcConnectorConfig>("AgvcConnectorConfig.json");
+                filename = "AgvcConnectorConfig.json";
+                Vehicle.AgvcConnectorConfig = ReadFromJsonFilename<AgvcConnectorConfig>(filename);
                 Vehicle.AgvcConnectorConfig.ScheduleIntervalMs = Math.Max(Vehicle.AgvcConnectorConfig.ScheduleIntervalMs, minThreadSleep);
                 Vehicle.AgvcConnectorConfig.AskReserveIntervalMs = Math.Max(Vehicle.AgvcConnectorConfig.AskReserveIntervalMs, minThreadSleep);
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
-                Vehicle.AlarmConfig = ReadFromJsonFilename<AlarmConfig>("AlarmConfig.json");
+                filename = "AlarmConfig.json";
+                Vehicle.AlarmConfig = ReadFromJsonFilename<AlarmConfig>(filename);
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
-                Vehicle.BatteryLog = ReadFromJsonFilename<BatteryLog>("BatteryLog.json");                
+                filename = "BatteryLog.json";
+                Vehicle.BatteryLog = ReadFromJsonFilename<BatteryLog>(filename);                
                 InitialSoc = Vehicle.BatteryLog.InitialSoc;
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "讀寫設定檔"));
             }
