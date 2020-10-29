@@ -33,13 +33,9 @@ namespace Mirle.Agv.Utmc.Controller
 
         public event EventHandler<string> ImportantPspLog;
         public event EventHandler<string> OnStatusChangeReportEvent;
-        public event EventHandler<EnumAutoState> OnModeChangeEvent;
-        public event EventHandler<CarrierSlotStatus> OnUpdateSlotStatusEvent;
         public event EventHandler<int> OnAlarmCodeSetEvent;
         public event EventHandler<int> OnAlarmCodeResetEvent;
         public event EventHandler OnAlarmCodeAllResetEvent;
-        public event EventHandler<double> OnBatteryPercentageChangeEvent;
-        public event EventHandler<EnumRobotEndType> OnRobotEndEvent;
 
         public LocalPackage()
         {
@@ -48,70 +44,6 @@ namespace Mirle.Agv.Utmc.Controller
         private void InitialThreads()
         {
         }
-
-        #region PrimaryReceived
-
-        private void SetVehicleManual()
-        {
-            OnModeChangeEvent?.Invoke(this, EnumAutoState.Manual);
-            ImportantPspLog?.Invoke(this, $"ModeChange : Manual");
-        }
-
-        private void SetVehicleAuto()
-        {
-            OnModeChangeEvent?.Invoke(this, EnumAutoState.Auto);
-            ImportantPspLog?.Invoke(this, $"ModeChange : Auto");
-        }
-
-        public void SetVehicleAutoScenario()
-        {
-            //AllAgvlStatusReportRequest();
-            //SpinWait.SpinUntil(() => false, 50);
-
-            //SendPositionReportRequest();
-            //SpinWait.SpinUntil(() => false, 50);
-
-            //SendBatteryStatusRequest();
-            //SpinWait.SpinUntil(() => false, 50);
-        }
-
-    
-
-        public void RequestVehicleToManual()
-        {
-            try
-            {
-                
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-                ImportantPspLog?.Invoke(this, ex.Message);
-            }
-        }       
-
-        #endregion
-      
-
-        #region PsWrapper
-
-        public void ReportAgvcDisConnect()
-        {
-            
-        }
-
-        #endregion
-
-        #region Battery Control
-
-      
-
-        #endregion
-
-        #region Move Control
-       
-
-        #endregion
 
         #region Logger
 

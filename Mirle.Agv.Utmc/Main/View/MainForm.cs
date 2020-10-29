@@ -1105,9 +1105,9 @@ namespace Mirle.Agv.Utmc.View
                 RobotStatus aseRobotStatus = new RobotStatus(Vehicle.RobotStatus);
                 ucRobotRobotState.TagValue = aseRobotStatus.EnumRobotState.ToString();
                 ucRobotIsHome.TagValue = aseRobotStatus.IsHome.ToString();
-                ucRobotIsHome.TagColor = aseRobotStatus.IsHome ? Color.Black : Color.OrangeRed;
+                ucRobotIsHome.TagColor = aseRobotStatus.IsHome ? Color.Transparent : Color.OrangeRed;
                 ucRobotHome.TagValue = aseRobotStatus.IsHome.ToString();
-                ucRobotHome.TagColor = aseRobotStatus.IsHome ? Color.Black : Color.OrangeRed;
+                ucRobotHome.TagColor = aseRobotStatus.IsHome ? Color.Transparent : Color.OrangeRed;
 
                 CarrierSlotStatus slotL = new CarrierSlotStatus(Vehicle.CarrierSlotLeft);
                 CarrierSlotStatus slotR = new CarrierSlotStatus(Vehicle.CarrierSlotRight);
@@ -1201,10 +1201,10 @@ namespace Mirle.Agv.Utmc.View
                 switch (Vehicle.AutoState)
                 {
                     case EnumAutoState.Auto:
-                        mainFlowHandler.LocalPackage_OnModeChangeEvent(this, EnumAutoState.Manual);
+                        mainFlowHandler.ConnectionModeHandler_OnModeChangeEvent(this, EnumAutoState.Manual);
                         break;
                     case EnumAutoState.Manual:
-                        mainFlowHandler.LocalPackage_OnModeChangeEvent(this, EnumAutoState.Auto);
+                        mainFlowHandler.ConnectionModeHandler_OnModeChangeEvent(this, EnumAutoState.Auto);
                         break;
                     case EnumAutoState.None:
                         break;

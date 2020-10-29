@@ -34,6 +34,7 @@ namespace Mirle.Agv.Utmc.Controller
         public Robot.IRobotHandler RobotHandler { get; set; }
         public Battery.IBatteryHandler BatteryHandler { get; set; }
         public Move.IMoveHandler MoveHandler { get; set; }
+        public ConnectionMode.IConnectionModeHandler ConnectionModeHandler { get; set; }
 
         #endregion
 
@@ -171,6 +172,7 @@ namespace Mirle.Agv.Utmc.Controller
                 RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
                 BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
                 MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
+                ConnectionModeHandler = new ConnectionMode.NullObjConnectionModeHandler(Vehicle.AutoState);
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
             }
@@ -210,11 +212,14 @@ namespace Mirle.Agv.Utmc.Controller
                 agvcConnector.OnSendRecvTimeoutEvent += AgvcConnector_OnSendRecvTimeoutEvent;
                 agvcConnector.OnCstRenameEvent += AgvcConnector_OnCstRenameEvent;
 
-                localPackage.OnModeChangeEvent += LocalPackage_OnModeChangeEvent;
                 localPackage.ImportantPspLog += LocalPackage_ImportantPspLog;
                 localPackage.OnStatusChangeReportEvent += LocalPackage_OnStatusChangeReportEvent;
                 localPackage.OnAlarmCodeSetEvent += LocalPackage_OnAlarmCodeSetEvent1;
                 localPackage.OnAlarmCodeResetEvent += LocalPackage_OnAlarmCodeResetEvent;
+
+                ConnectionModeHandler.OnModeChangeEvent += ConnectionModeHandler_OnModeChangeEvent;
+                ConnectionModeHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
+                ConnectionModeHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
 
                 MoveHandler.OnUpdateMoveStatusEvent += MoveHandler_OnUpdateMoveStatusEvent;
                 MoveHandler.OnUpdatePositionArgsEvent += MoveHandler_OnUpdatePositionArgsEvent;
@@ -3051,7 +3056,7 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 SetAlarmFromAgvm(56);
-                localPackage.ReportAgvcDisConnect();
+                ConnectionModeHandler.AgvcDisconnect();
             }
             catch (Exception ex)
             {
@@ -3063,7 +3068,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         public object _ModeChangeLocker = new object();
 
-        public void LocalPackage_OnModeChangeEvent(object sender, EnumAutoState autoState)
+        public void ConnectionModeHandler_OnModeChangeEvent(object sender, EnumAutoState autoState)
         {
             try
             {
@@ -3076,7 +3081,7 @@ namespace Mirle.Agv.Utmc.Controller
                         switch (autoState)
                         {
                             case EnumAutoState.Auto:
-                                localPackage.SetVehicleAutoScenario();
+                                GetAllStatusReport();
                                 ResetAllAlarmsFromAgvm();
                                 Thread.Sleep(3000);  //500-->3000
                                 CheckCanAuto();
@@ -3084,7 +3089,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 Vehicle.MoveStatus.IsMoveEnd = false;
                                 break;
                             case EnumAutoState.Manual:
-                                localPackage.RequestVehicleToManual();
+                                ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                                 break;
                             case EnumAutoState.None:
                                 break;
@@ -3104,10 +3109,11 @@ namespace Mirle.Agv.Utmc.Controller
                 if (autoState == EnumAutoState.Auto)
                 {
                     SetAlarmFromAgvm(31);
-                    localPackage.RequestVehicleToManual();
+                    ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                 }
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
+
         }
 
         private void CheckCanAuto()

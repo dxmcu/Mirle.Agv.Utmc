@@ -990,7 +990,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveMovingIndex.Name = "ucMoveMovingIndex";
             this.ucMoveMovingIndex.Size = new System.Drawing.Size(135, 65);
             this.ucMoveMovingIndex.TabIndex = 0;
-            this.ucMoveMovingIndex.TagColor = System.Drawing.Color.Black;
             this.ucMoveMovingIndex.TagName = "MovingIndex";
             this.ucMoveMovingIndex.TagValue = "0";
             // 
@@ -1001,7 +1000,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveMoveState.Name = "ucMoveMoveState";
             this.ucMoveMoveState.Size = new System.Drawing.Size(135, 65);
             this.ucMoveMoveState.TabIndex = 0;
-            this.ucMoveMoveState.TagColor = System.Drawing.Color.Black;
             this.ucMoveMoveState.TagName = "MoveState";
             this.ucMoveMoveState.TagValue = "Idle";
             // 
@@ -1012,7 +1010,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMovePauseStop.Name = "ucMovePauseStop";
             this.ucMovePauseStop.Size = new System.Drawing.Size(135, 65);
             this.ucMovePauseStop.TabIndex = 0;
-            this.ucMovePauseStop.TagColor = System.Drawing.Color.Black;
             this.ucMovePauseStop.TagName = "Pause Stop";
             this.ucMovePauseStop.TagValue = "Off";
             // 
@@ -1023,7 +1020,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveReserveStop.Name = "ucMoveReserveStop";
             this.ucMoveReserveStop.Size = new System.Drawing.Size(135, 65);
             this.ucMoveReserveStop.TabIndex = 0;
-            this.ucMoveReserveStop.TagColor = System.Drawing.Color.Black;
             this.ucMoveReserveStop.TagName = "Reserve Stop";
             this.ucMoveReserveStop.TagValue = "Off";
             // 
@@ -1034,7 +1030,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveLastAddress.Name = "ucMoveLastAddress";
             this.ucMoveLastAddress.Size = new System.Drawing.Size(135, 65);
             this.ucMoveLastAddress.TabIndex = 0;
-            this.ucMoveLastAddress.TagColor = System.Drawing.Color.Black;
             this.ucMoveLastAddress.TagName = "Last Address";
             this.ucMoveLastAddress.TagValue = "10001";
             // 
@@ -1045,7 +1040,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveIsMoveEnd.Name = "ucMoveIsMoveEnd";
             this.ucMoveIsMoveEnd.Size = new System.Drawing.Size(135, 65);
             this.ucMoveIsMoveEnd.TabIndex = 0;
-            this.ucMoveIsMoveEnd.TagColor = System.Drawing.Color.Black;
             this.ucMoveIsMoveEnd.TagName = "Is Move End";
             this.ucMoveIsMoveEnd.TagValue = "True";
             // 
@@ -1056,7 +1050,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMoveLastSection.Name = "ucMoveLastSection";
             this.ucMoveLastSection.Size = new System.Drawing.Size(135, 65);
             this.ucMoveLastSection.TabIndex = 0;
-            this.ucMoveLastSection.TagColor = System.Drawing.Color.Black;
             this.ucMoveLastSection.TagName = "Last Section";
             this.ucMoveLastSection.TagValue = "00101";
             // 
@@ -1067,7 +1060,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMovePositionY.Name = "ucMovePositionY";
             this.ucMovePositionY.Size = new System.Drawing.Size(135, 65);
             this.ucMovePositionY.TabIndex = 0;
-            this.ucMovePositionY.TagColor = System.Drawing.Color.Black;
             this.ucMovePositionY.TagName = "Y";
             this.ucMovePositionY.TagValue = "-13579";
             // 
@@ -1078,7 +1070,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucMovePositionX.Name = "ucMovePositionX";
             this.ucMovePositionX.Size = new System.Drawing.Size(135, 65);
             this.ucMovePositionX.TabIndex = 0;
-            this.ucMovePositionX.TagColor = System.Drawing.Color.Black;
             this.ucMovePositionX.TagName = "X";
             this.ucMovePositionX.TagValue = "123456";
             // 
@@ -1118,7 +1109,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotIsHome.Name = "ucRobotIsHome";
             this.ucRobotIsHome.Size = new System.Drawing.Size(135, 65);
             this.ucRobotIsHome.TabIndex = 1;
-            this.ucRobotIsHome.TagColor = System.Drawing.Color.Black;
             this.ucRobotIsHome.TagName = "Is Home";
             this.ucRobotIsHome.TagValue = "false";
             // 
@@ -1129,7 +1119,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotSlotRId.Name = "ucRobotSlotRId";
             this.ucRobotSlotRId.Size = new System.Drawing.Size(135, 65);
             this.ucRobotSlotRId.TabIndex = 1;
-            this.ucRobotSlotRId.TagColor = System.Drawing.Color.Black;
             this.ucRobotSlotRId.TagName = "Slot R Id";
             this.ucRobotSlotRId.TagValue = "PQR";
             // 
@@ -1140,7 +1129,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotSlotRState.Name = "ucRobotSlotRState";
             this.ucRobotSlotRState.Size = new System.Drawing.Size(135, 65);
             this.ucRobotSlotRState.TabIndex = 1;
-            this.ucRobotSlotRState.TagColor = System.Drawing.Color.Black;
             this.ucRobotSlotRState.TagName = "Slot R State";
             this.ucRobotSlotRState.TagValue = "Empty";
             // 
@@ -1151,7 +1139,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotSlotLState.Name = "ucRobotSlotLState";
             this.ucRobotSlotLState.Size = new System.Drawing.Size(135, 65);
             this.ucRobotSlotLState.TabIndex = 1;
-            this.ucRobotSlotLState.TagColor = System.Drawing.Color.Black;
             this.ucRobotSlotLState.TagName = "Slot L State";
             this.ucRobotSlotLState.TagValue = "Empty";
             // 
@@ -1162,7 +1149,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotSlotLId.Name = "ucRobotSlotLId";
             this.ucRobotSlotLId.Size = new System.Drawing.Size(135, 65);
             this.ucRobotSlotLId.TabIndex = 1;
-            this.ucRobotSlotLId.TagColor = System.Drawing.Color.Black;
             this.ucRobotSlotLId.TagName = "Slot L Id";
             this.ucRobotSlotLId.TagValue = "ABC";
             // 
@@ -1173,7 +1159,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucRobotRobotState.Name = "ucRobotRobotState";
             this.ucRobotRobotState.Size = new System.Drawing.Size(135, 65);
             this.ucRobotRobotState.TabIndex = 1;
-            this.ucRobotRobotState.TagColor = System.Drawing.Color.Black;
             this.ucRobotRobotState.TagName = "Robot State";
             this.ucRobotRobotState.TagValue = "Idle";
             // 
@@ -1211,7 +1196,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucAddress.Name = "ucAddress";
             this.ucAddress.Size = new System.Drawing.Size(135, 65);
             this.ucAddress.TabIndex = 53;
-            this.ucAddress.TagColor = System.Drawing.Color.Black;
             this.ucAddress.TagName = "Address";
             this.ucAddress.TagValue = " 70.0";
             // 
@@ -1222,7 +1206,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucChargeCount.Name = "ucChargeCount";
             this.ucChargeCount.Size = new System.Drawing.Size(135, 65);
             this.ucChargeCount.TabIndex = 52;
-            this.ucChargeCount.TagColor = System.Drawing.Color.Black;
             this.ucChargeCount.TagName = "ChargeCount";
             this.ucChargeCount.TagValue = " 70.0";
             // 
@@ -1233,7 +1216,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucCurransferStepType.Name = "ucCurransferStepType";
             this.ucCurransferStepType.Size = new System.Drawing.Size(135, 65);
             this.ucCurransferStepType.TabIndex = 51;
-            this.ucCurransferStepType.TagColor = System.Drawing.Color.Black;
             this.ucCurransferStepType.TagName = "TRStepType";
             this.ucCurransferStepType.TagValue = " 70.0";
             // 
@@ -1244,7 +1226,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucStepsCount.Name = "ucStepsCount";
             this.ucStepsCount.Size = new System.Drawing.Size(135, 65);
             this.ucStepsCount.TabIndex = 50;
-            this.ucStepsCount.TagColor = System.Drawing.Color.Black;
             this.ucStepsCount.TagName = "StepsCount";
             this.ucStepsCount.TagValue = " 70.0";
             // 
@@ -1255,7 +1236,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsSimulation.Name = "ucIsSimulation";
             this.ucIsSimulation.Size = new System.Drawing.Size(135, 65);
             this.ucIsSimulation.TabIndex = 49;
-            this.ucIsSimulation.TagColor = System.Drawing.Color.Black;
             this.ucIsSimulation.TagName = "Simulation";
             this.ucIsSimulation.TagValue = " 70.0";
             // 
@@ -1266,7 +1246,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsCharger.Name = "ucIsCharger";
             this.ucIsCharger.Size = new System.Drawing.Size(135, 65);
             this.ucIsCharger.TabIndex = 48;
-            this.ucIsCharger.TagColor = System.Drawing.Color.Black;
             this.ucIsCharger.TagName = "IsCharger";
             this.ucIsCharger.TagValue = " 70.0";
             // 
@@ -1277,7 +1256,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsArrivalCharge.Name = "ucIsArrivalCharge";
             this.ucIsArrivalCharge.Size = new System.Drawing.Size(135, 65);
             this.ucIsArrivalCharge.TabIndex = 47;
-            this.ucIsArrivalCharge.TagColor = System.Drawing.Color.Black;
             this.ucIsArrivalCharge.TagName = "ArrivalCharge";
             this.ucIsArrivalCharge.TagValue = " 70.0";
             // 
@@ -1288,7 +1266,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsLowPowerStartChargeTimeout.Name = "ucIsLowPowerStartChargeTimeout";
             this.ucIsLowPowerStartChargeTimeout.Size = new System.Drawing.Size(135, 65);
             this.ucIsLowPowerStartChargeTimeout.TabIndex = 46;
-            this.ucIsLowPowerStartChargeTimeout.TagColor = System.Drawing.Color.Black;
             this.ucIsLowPowerStartChargeTimeout.TagName = "ChargeTimeout";
             this.ucIsLowPowerStartChargeTimeout.TagValue = " 70.0";
             // 
@@ -1299,7 +1276,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsLowPower.Name = "ucIsLowPower";
             this.ucIsLowPower.Size = new System.Drawing.Size(135, 65);
             this.ucIsLowPower.TabIndex = 45;
-            this.ucIsLowPower.TagColor = System.Drawing.Color.Black;
             this.ucIsLowPower.TagName = "IsLowPower";
             this.ucIsLowPower.TagValue = " 70.0";
             // 
@@ -1310,7 +1286,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsOptimize.Name = "ucIsOptimize";
             this.ucIsOptimize.Size = new System.Drawing.Size(135, 65);
             this.ucIsOptimize.TabIndex = 44;
-            this.ucIsOptimize.TagColor = System.Drawing.Color.Black;
             this.ucIsOptimize.TagName = "IsOptimize";
             this.ucIsOptimize.TagValue = " 70.0";
             // 
@@ -1321,7 +1296,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsVehicleIdle.Name = "ucIsVehicleIdle";
             this.ucIsVehicleIdle.Size = new System.Drawing.Size(135, 65);
             this.ucIsVehicleIdle.TabIndex = 43;
-            this.ucIsVehicleIdle.TagColor = System.Drawing.Color.Black;
             this.ucIsVehicleIdle.TagName = "IsVehicleIdle";
             this.ucIsVehicleIdle.TagValue = " 70.0";
             // 
@@ -1332,7 +1306,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucAutoState.Name = "ucAutoState";
             this.ucAutoState.Size = new System.Drawing.Size(135, 65);
             this.ucAutoState.TabIndex = 42;
-            this.ucAutoState.TagColor = System.Drawing.Color.Black;
             this.ucAutoState.TagName = "AutoState";
             this.ucAutoState.TagValue = " 70.0";
             // 
@@ -1354,7 +1327,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucBatteryCharging.Name = "ucBatteryCharging";
             this.ucBatteryCharging.Size = new System.Drawing.Size(135, 65);
             this.ucBatteryCharging.TabIndex = 5;
-            this.ucBatteryCharging.TagColor = System.Drawing.Color.Black;
             this.ucBatteryCharging.TagName = "Charging";
             this.ucBatteryCharging.TagValue = "false";
             // 
@@ -1365,7 +1337,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucBatteryTemperature.Name = "ucBatteryTemperature";
             this.ucBatteryTemperature.Size = new System.Drawing.Size(135, 65);
             this.ucBatteryTemperature.TabIndex = 6;
-            this.ucBatteryTemperature.TagColor = System.Drawing.Color.Black;
             this.ucBatteryTemperature.TagName = "Temperature";
             this.ucBatteryTemperature.TagValue = "40.5";
             // 
@@ -1376,7 +1347,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucBatteryVoltage.Name = "ucBatteryVoltage";
             this.ucBatteryVoltage.Size = new System.Drawing.Size(135, 65);
             this.ucBatteryVoltage.TabIndex = 7;
-            this.ucBatteryVoltage.TagColor = System.Drawing.Color.Black;
             this.ucBatteryVoltage.TagName = "Voltage";
             this.ucBatteryVoltage.TagValue = "55.66";
             // 
@@ -1387,7 +1357,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucBatteryPercentage.Name = "ucBatteryPercentage";
             this.ucBatteryPercentage.Size = new System.Drawing.Size(135, 65);
             this.ucBatteryPercentage.TabIndex = 3;
-            this.ucBatteryPercentage.TagColor = System.Drawing.Color.Black;
             this.ucBatteryPercentage.TagName = "Percentage";
             this.ucBatteryPercentage.TagValue = " 70.0";
             // 
@@ -1447,7 +1416,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsCharging.Name = "ucIsCharging";
             this.ucIsCharging.Size = new System.Drawing.Size(135, 65);
             this.ucIsCharging.TabIndex = 69;
-            this.ucIsCharging.TagColor = System.Drawing.Color.Black;
             this.ucIsCharging.TagName = "IsCharging";
             this.ucIsCharging.TagValue = " 70.0";
             // 
@@ -1458,7 +1426,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsHome.Name = "ucIsHome";
             this.ucIsHome.Size = new System.Drawing.Size(135, 65);
             this.ucIsHome.TabIndex = 68;
-            this.ucIsHome.TagColor = System.Drawing.Color.Black;
             this.ucIsHome.TagName = "IsHome";
             this.ucIsHome.TagValue = " 70.0";
             // 
@@ -1469,7 +1436,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsSleepByAskReserveFail.Name = "ucIsSleepByAskReserveFail";
             this.ucIsSleepByAskReserveFail.Size = new System.Drawing.Size(135, 65);
             this.ucIsSleepByAskReserveFail.TabIndex = 67;
-            this.ucIsSleepByAskReserveFail.TagColor = System.Drawing.Color.Black;
             this.ucIsSleepByAskReserveFail.TagName = "IsSleepByAskReserveFail";
             this.ucIsSleepByAskReserveFail.TagValue = " 70.0";
             // 
@@ -1480,7 +1446,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsMoveEnd.Name = "ucIsMoveEnd";
             this.ucIsMoveEnd.Size = new System.Drawing.Size(135, 65);
             this.ucIsMoveEnd.TabIndex = 66;
-            this.ucIsMoveEnd.TagColor = System.Drawing.Color.Black;
             this.ucIsMoveEnd.TagName = "IsMoveEnd";
             this.ucIsMoveEnd.TagValue = " 70.0";
             // 
@@ -1491,7 +1456,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsMoveStep.Name = "ucIsMoveStep";
             this.ucIsMoveStep.Size = new System.Drawing.Size(135, 65);
             this.ucIsMoveStep.TabIndex = 64;
-            this.ucIsMoveStep.TagColor = System.Drawing.Color.Black;
             this.ucIsMoveStep.TagName = "IsMoveStep";
             this.ucIsMoveStep.TagValue = " 70.0";
             // 
@@ -1502,7 +1466,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucIsAskReservePause.Name = "ucIsAskReservePause";
             this.ucIsAskReservePause.Size = new System.Drawing.Size(135, 65);
             this.ucIsAskReservePause.TabIndex = 63;
-            this.ucIsAskReservePause.TagColor = System.Drawing.Color.Black;
             this.ucIsAskReservePause.TagName = "IsAskReservePause";
             this.ucIsAskReservePause.TagValue = " 70.0";
             // 
@@ -1581,7 +1544,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucTransferCommandTransferStep.Name = "ucTransferCommandTransferStep";
             this.ucTransferCommandTransferStep.Size = new System.Drawing.Size(135, 65);
             this.ucTransferCommandTransferStep.TabIndex = 1;
-            this.ucTransferCommandTransferStep.TagColor = System.Drawing.Color.Black;
             this.ucTransferCommandTransferStep.TagName = "TransferStep";
             this.ucTransferCommandTransferStep.TagValue = "None";
             // 
@@ -1591,7 +1553,6 @@ namespace Mirle.Agv.Utmc.View
             this.ucTransferCommandEnrouteState.Name = "ucTransferCommandEnrouteState";
             this.ucTransferCommandEnrouteState.Size = new System.Drawing.Size(135, 65);
             this.ucTransferCommandEnrouteState.TabIndex = 1;
-            this.ucTransferCommandEnrouteState.TagColor = System.Drawing.Color.Black;
             this.ucTransferCommandEnrouteState.TagName = "EnrouteState";
             this.ucTransferCommandEnrouteState.TagValue = "-1";
             // 

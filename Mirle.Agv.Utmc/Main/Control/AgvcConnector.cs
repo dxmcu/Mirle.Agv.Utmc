@@ -204,7 +204,6 @@ namespace Mirle.Agv.Utmc.Controller
             if (!Vehicle.IsAgvcConnect)
             {
                 mainFlowHandler.AgvcDisconnected();
-                //mainFlowHandler.SetAlarmFromAgvm(56);
             }
             var isConnect = agent.IsConnection ? " Connect " : " Dis-Connect ";
             mainFlowHandler.LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"AgvcConnector : {agent.Name},AgvcConnection = {isConnect}");

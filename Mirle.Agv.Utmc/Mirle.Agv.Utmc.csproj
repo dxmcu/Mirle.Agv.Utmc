@@ -122,6 +122,9 @@
     <Compile Include="Battery\IBatteryHandler.cs" />
     <Compile Include="Battery\NullObjBatteryHandler.cs" />
     <Compile Include="Battery\UtmcBatteryAdapter.cs" />
+    <Compile Include="ConnectionMode\IConnectionModeHandler.cs" />
+    <Compile Include="ConnectionMode\NullObjConnectionModeHandler.cs" />
+    <Compile Include="ConnectionMode\UtmcConnectionModeAdapter.cs" />
     <Compile Include="Customer\LocalPackage\Control\LocalPackage.cs" />
     <Compile Include="Move\PositionArgs.cs" />
     <Compile Include="Battery\BatteryStatus.cs" />
