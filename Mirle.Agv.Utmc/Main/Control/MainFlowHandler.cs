@@ -30,7 +30,6 @@ namespace Mirle.Agv.Utmc.Controller
         public MirleLogger mirleLogger = null;
         public AlarmHandler alarmHandler;
         public MapHandler mapHandler;
-        public LocalPackage localPackage;
         public UserAgent UserAgent { get; set; } = new UserAgent();
         public Robot.IRobotHandler RobotHandler { get; set; }
         public Battery.IBatteryHandler BatteryHandler { get; set; }
@@ -180,7 +179,6 @@ namespace Mirle.Agv.Utmc.Controller
                 mapHandler = new MapHandler();
                 agvcConnector = new AgvcConnector(this);
 
-                localPackage = new LocalPackage();
                 RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
                 BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
                 MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
@@ -223,11 +221,6 @@ namespace Mirle.Agv.Utmc.Controller
 
                 agvcConnector.OnSendRecvTimeoutEvent += AgvcConnector_OnSendRecvTimeoutEvent;
                 agvcConnector.OnCstRenameEvent += AgvcConnector_OnCstRenameEvent;
-
-                localPackage.ImportantPspLog += LocalPackage_ImportantPspLog;
-                localPackage.OnStatusChangeReportEvent += LocalPackage_OnStatusChangeReportEvent;
-                localPackage.OnAlarmCodeSetEvent += LocalPackage_OnAlarmCodeSetEvent1;
-                localPackage.OnAlarmCodeResetEvent += LocalPackage_OnAlarmCodeResetEvent;
 
                 ConnectionModeHandler.OnModeChangeEvent += ConnectionModeHandler_OnModeChangeEvent;
                 ConnectionModeHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
@@ -1238,6 +1231,28 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
+        }
+
+        private void UpdateMovePassSections(string id)
+        {
+            int getReserveOkSectionIndex = 0;
+            try
+            {
+                var getReserveOkSections = agvcConnector.GetReserveOkSections();
+                getReserveOkSectionIndex = getReserveOkSections.FindIndex(x => x.Id == id);
+                if (getReserveOkSectionIndex < 0) return;
+                for (int i = 0; i < getReserveOkSectionIndex; i++)
+                {
+                    //Remove passed section in ReserveOkSection
+                    agvcConnector.DequeueGotReserveOkSections();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"FAIL [SecId={id}][Index={getReserveOkSectionIndex}]");
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
         }
 
         private void MoveHandler_OnUpdateMoveStatusEvent(object sender, MoveStatus moveStatus)
@@ -2866,27 +2881,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         #endregion
 
-        private void UpdateMovePassSections(string id)
-        {
-            int getReserveOkSectionIndex = 0;
-            try
-            {
-                var getReserveOkSections = agvcConnector.GetReserveOkSections();
-                getReserveOkSectionIndex = getReserveOkSections.FindIndex(x => x.Id == id);
-                if (getReserveOkSectionIndex < 0) return;
-                for (int i = 0; i < getReserveOkSectionIndex; i++)
-                {
-                    //Remove passed section in ReserveOkSection
-                    agvcConnector.DequeueGotReserveOkSections();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"FAIL [SecId={id}][Index={getReserveOkSectionIndex}]");
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
 
-        }
         public void StopVehicle()
         {
             MoveHandler.StopMove();
@@ -3267,33 +3262,6 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
-        }
-
-        private void LocalPackage_ImportantPspLog(object sender, string msg)
-        {
-            try
-            {
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
-            }
-            catch (System.Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-        private void LocalPackage_OnAlarmCodeResetEvent(object sender, int e)
-        {
-            ResetAllAlarmsFromAgvl();
-        }
-
-        private void LocalPackage_OnAlarmCodeSetEvent1(object sender, int id)
-        {
-            SetAlarmFromAgvl(id);
-        }
-
-        private void LocalPackage_OnStatusChangeReportEvent(object sender, string e)
-        {
-            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, e);
-            agvcConnector.StatusChangeReport();
         }
 
         #endregion

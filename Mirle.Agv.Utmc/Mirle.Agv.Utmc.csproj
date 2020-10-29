@@ -125,7 +125,6 @@
     <Compile Include="ConnectionMode\IConnectionModeHandler.cs" />
     <Compile Include="ConnectionMode\NullObjConnectionModeHandler.cs" />
     <Compile Include="ConnectionMode\UtmcConnectionModeAdapter.cs" />
-    <Compile Include="Customer\LocalPackage\Control\LocalPackage.cs" />
     <Compile Include="Move\PositionArgs.cs" />
     <Compile Include="Battery\BatteryStatus.cs" />
     <Compile Include="Move\IMoveHandler.cs" />
@@ -320,6 +319,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Customer\LocalPackage\Control\" />
     <Folder Include="Customer\LocalPackage\Model\" />
     <Folder Include="Customer\LocalPackage\View\" />
     <Folder Include="SafetySensor\" />
