@@ -7,6 +7,6 @@ namespace Mirle.Agv.Utmc.Tools
         public static string GetJsonInfo(this object obj)
         {
             return JsonConvert.SerializeObject(obj, Formatting.Indented);
-        }
+        }        
     }
 }

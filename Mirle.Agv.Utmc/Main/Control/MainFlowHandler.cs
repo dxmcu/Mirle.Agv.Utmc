@@ -2,6 +2,7 @@
 using Mirle.Agv.Utmc.Model;
 using Mirle.Agv.Utmc.Model.Configs;
 using Mirle.Agv.Utmc.Model.TransferSteps;
+using Mirle.Agv.Utmc.Tools;
 using Mirle.Tools;
 using Newtonsoft.Json;
 using System;
@@ -103,8 +104,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 //Main Configs 
                 int minThreadSleep = 100;
-                string allText = System.IO.File.ReadAllText("MainFlowConfig.json");
-                Vehicle.MainFlowConfig = JsonConvert.DeserializeObject<MainFlowConfig>(allText);
+                Vehicle.MainFlowConfig = ReadFromJsonFilename<MainFlowConfig>("MainFlowConfig.json");
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
                     Vehicle.LoginLevel = EnumLoginLevel.Admin;
@@ -113,19 +113,15 @@ namespace Mirle.Agv.Utmc.Controller
                 Vehicle.MainFlowConfig.TrackPositionSleepTimeMs = Math.Max(Vehicle.MainFlowConfig.TrackPositionSleepTimeMs, minThreadSleep);
                 Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs = Math.Max(Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs, minThreadSleep);
 
-                allText = System.IO.File.ReadAllText("MapConfig.json");
-                Vehicle.MapConfig = JsonConvert.DeserializeObject<MapConfig>(allText);
+                Vehicle.MapConfig = ReadFromJsonFilename<MapConfig>("MapConfig.json");
 
-                allText = System.IO.File.ReadAllText("AgvcConnectorConfig.json");
-                Vehicle.AgvcConnectorConfig = JsonConvert.DeserializeObject<AgvcConnectorConfig>(allText);
+                Vehicle.AgvcConnectorConfig = ReadFromJsonFilename<AgvcConnectorConfig>("AgvcConnectorConfig.json");
                 Vehicle.AgvcConnectorConfig.ScheduleIntervalMs = Math.Max(Vehicle.AgvcConnectorConfig.ScheduleIntervalMs, minThreadSleep);
                 Vehicle.AgvcConnectorConfig.AskReserveIntervalMs = Math.Max(Vehicle.AgvcConnectorConfig.AskReserveIntervalMs, minThreadSleep);
 
-                allText = System.IO.File.ReadAllText("AlarmConfig.json");
-                Vehicle.AlarmConfig = JsonConvert.DeserializeObject<AlarmConfig>(allText);
+                Vehicle.AlarmConfig = ReadFromJsonFilename<AlarmConfig>("AlarmConfig.json");
 
-                allText = System.IO.File.ReadAllText("BatteryLog.json");
-                Vehicle.BatteryLog = JsonConvert.DeserializeObject<BatteryLog>(allText);
+                Vehicle.BatteryLog = ReadFromJsonFilename<BatteryLog>("BatteryLog.json");                
                 InitialSoc = Vehicle.BatteryLog.InitialSoc;
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "讀寫設定檔"));
@@ -135,6 +131,12 @@ namespace Mirle.Agv.Utmc.Controller
                 isIniOk = false;
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(false, "讀寫設定檔"));
             }
+        }
+
+        private T ReadFromJsonFilename<T>(string filename)
+        {
+            var allText = System.IO.File.ReadAllText(filename);
+            return JsonConvert.DeserializeObject<T>(allText);
         }
 
         private void LoggersInitial()
