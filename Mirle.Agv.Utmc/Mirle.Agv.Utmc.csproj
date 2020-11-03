@@ -63,9 +63,24 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ElmoMotionControlComponents.Common.EASComponents">
+      <HintPath>OutsideDll\ElmoMotionControlComponents.Common.EASComponents.dll</HintPath>
+    </Reference>
+    <Reference Include="ElmoMotionControlComponents.Drive.EASComponents">
+      <HintPath>OutsideDll\ElmoMotionControlComponents.Drive.EASComponents.dll</HintPath>
+    </Reference>
+    <Reference Include="ElmoMotionControlComponents.GMAS.MMCLibDotNET">
+      <HintPath>OutsideDll\ElmoMotionControlComponents.GMAS.MMCLibDotNET.dll</HintPath>
+    </Reference>
     <Reference Include="Google.Protobuf, Version=3.5.1.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>OutsideDll\Google.Protobuf.dll</HintPath>
+    </Reference>
+    <Reference Include="Keyence.AutoID.SDK">
+      <HintPath>OutsideDll\Keyence.AutoID.SDK.dll</HintPath>
+    </Reference>
+    <Reference Include="Keyence.AutoID.SDK_">
+      <HintPath>OutsideDll\Keyence.AutoID.SDK_.dll</HintPath>
     </Reference>
     <Reference Include="Logrila.Logging, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -87,6 +102,12 @@
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>OutsideDll\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="NModbus4">
+      <HintPath>OutsideDll\NModbus4.dll</HintPath>
+    </Reference>
+    <Reference Include="NModbus4.Serial">
+      <HintPath>OutsideDll\NModbus4.Serial.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=3.12.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <HintPath>..\packages\NUnit.3.12.0\lib\net45\nunit.framework.dll</HintPath>
@@ -117,6 +138,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>OutsideDll\TCPIPTrxControl.dll</HintPath>
     </Reference>
+    <Reference Include="VncClientControlCommon">
+      <HintPath>OutsideDll\VncClientControlCommon.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Battery\IBatteryHandler.cs" />
@@ -125,6 +149,210 @@
     <Compile Include="ConnectionMode\IConnectionModeHandler.cs" />
     <Compile Include="ConnectionMode\NullObjConnectionModeHandler.cs" />
     <Compile Include="ConnectionMode\UtmcConnectionModeAdapter.cs" />
+    <Compile Include="Customer\LocalPackage.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\Control\LoadUnloadControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\Control\LoadUnload\LoadUnload.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\Control\LoadUnload\LoadUnload_AGC.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\Control\PIO\PIOFlow.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\LoadUnLoadDefine.cs" />
+    <Compile Include="Customer\LocalPackage\LoadUnloadControl\Model\LoadUnloadControlData.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\AlarmHandler.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\ComputeFunction.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\InitialEventArgs.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\LoggerAgent.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\MainFlowHandler.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\MapHandler.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\BarcodeReader\BarcodeReader.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\BarcodeReader\BarcodeReader_Datalogic.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\BarcodeReader\BarcodeReader_Keyence.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\ConfigHandler.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\CRC\CRC32.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\Logger\LogBasicConfigs.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\Logger\LogFormat.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\Logger\Logger.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\Logger\LogType.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\Tools\XmlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Control\UserAgent.cs" />
+    <Compile Include="Customer\LocalPackage\Main\MainDefines.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Alarm.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\BatteryInfo.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\BatteryLog.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\CommunicationData.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Configs\InitialConfig.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Configs\MainFlowConfig.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Configs\MapConfig.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Configs\MiddlerConfig.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\DrawMap\DrawMapData.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\DrawMap\DrawMapSection.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\localData\LocalData.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\localData\VehicleLocation.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\MapAddress.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\MapAGVPosition.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\MapInfo.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\MapPosition.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\MapSection.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\Map\ObjectData.cs" />
+    <Compile Include="Customer\LocalPackage\Main\Model\TransferStepInfo\MoveCmdInfo.cs" />
+    <Compile Include="Customer\LocalPackage\Main\View\InitialForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\InitialForm.Designer.cs">
+      <DependentUpon>InitialForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\ProFaceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\ProFaceForm.Designer.cs">
+      <DependentUpon>ProFaceForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\AddressPicture.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\AddressPicture.Designer.cs">
+      <DependentUpon>AddressPicture.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\KeyboardNumber.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\KeyboardNumber.Designer.cs">
+      <DependentUpon>KeyboardNumber.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelAndTextBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelAndTextBox.Designer.cs">
+      <DependentUpon>LabelAndTextBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelList.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelList.Designer.cs">
+      <DependentUpon>LabelList.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelNameAndValue.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\LabelNameAndValue.Designer.cs">
+      <DependentUpon>LabelNameAndValue.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\UcVehicleImage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\Main\View\UserControls\UcVehicleImage.Designer.cs">
+      <DependentUpon>UcVehicleImage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\MIPCControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\SafetySensorControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\SafetySensor\SafetySensor.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\SafetySensor\SafetySensor_Bumper.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\SafetySensor\SafetySensor_EMO.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Control\SafetySensor\SafetySensor_Tim781.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\MIPCControlDefines.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Configs\MIPCConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Configs\MIPCData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Configs\MIPCPortData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Configs\SafetySensorConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Configs\SafetySensorData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\MIPCData\MIPCControlData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\MIPCData\MIPCPollingData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Modbus\ModbusData.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\Model\Modbus\SendAndReceive.cs" />
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\MIPCViewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\MIPCViewForm.Designer.cs">
+      <DependentUpon>MIPCViewForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCClassificationForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCClassificationForm.Designer.cs">
+      <DependentUpon>MIPCClassificationForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCMotionCommandForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCMotionCommandForm.Designer.cs">
+      <DependentUpon>MIPCMotionCommandForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControl\MIPCInfo.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MIPCControl\View\UserControl\MIPCInfo.Designer.cs">
+      <DependentUpon>MIPCInfo.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\CreateMoveControlList.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Driver.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Locate\LocateDriver.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Locate\LocateDriver_BarcodeMapSystem.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Locate\SLAM\LocateDriver_SLAM.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Locate\SLAM\LocateDriver_SLAM_BITO.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\Driver\Locate\SLAM\LocateDriver_SLAM_Sick.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\LocateControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\MotionControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\MoveControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\SensorSafetyControl.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\SimulateControl.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Control\UpdateControlHandler.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\CreateMoveCommandListConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Locate\BarcodeMapSystemConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Locate\LocateControlConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Locate\LocateDriver_SLAM_SickConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Locate\LocateDriver_SR2000Config.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Motion\AGVTurnParameter.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\Motion\AxisData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\MoveControlConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\SafetyData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Configs\TimeValueConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\Command.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\DecompositionCommandData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\MoveCommandData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\MoveCommandRecord.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\OneMoveCommand.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\ReserveData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\SectionLine.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\CreateCommandList\VChangeData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\BarcodeData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\BarcodeDataInMap.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\BarcodeMap.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\BarcodeReaderData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\BarocdeLineMap.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\LocateAGVPosition.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\LocateControlData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\LocateDriverConfig.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\SectionDeviationTheta.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\SLAM\SectionLineTransferData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\SLAM\SLAMOffseet.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\SLAM\SLAMTransfer.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\SLAM\SLAMTransferData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Locate\TimeStampData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Motion\AxisFeedbackData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Motion\MotionControlData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\MoveControl\MoveControlData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\MoveControl\MoveControlSensorStatus.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Simulate\SimulateData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Simulate\SimulateMoveVelocityData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Simulate\SimulateVelocityData.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\Model\Simulate\SimulateVelociy.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\MoveControlDefine.cs" />
+    <Compile Include="Customer\LocalPackage\MoveControl\View\MoveControlForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MoveControl\View\MoveControlForm.Designer.cs">
+      <DependentUpon>MoveControlForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MoveControl\View\UserControl\JogPitchLocateData.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Customer\LocalPackage\MoveControl\View\UserControl\JogPitchLocateData.Designer.cs">
+      <DependentUpon>JogPitchLocateData.cs</DependentUpon>
+    </Compile>
     <Compile Include="Move\PositionArgs.cs" />
     <Compile Include="Battery\BatteryStatus.cs" />
     <Compile Include="Move\IMoveHandler.cs" />
@@ -224,6 +452,52 @@
     <Compile Include="Tools\ExtensionMethods.cs" />
     <Compile Include="Tools\IMessageHandler.cs" />
     <Compile Include="Tools\MessageHandlerArgs.cs" />
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\InitialForm.resx">
+      <DependentUpon>InitialForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\ProFaceForm.resx">
+      <DependentUpon>ProFaceForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\AddressPicture.resx">
+      <DependentUpon>AddressPicture.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\KeyboardNumber.resx">
+      <DependentUpon>KeyboardNumber.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\LabelAndTextBox.resx">
+      <DependentUpon>LabelAndTextBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\LabelList.resx">
+      <DependentUpon>LabelList.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\LabelNameAndValue.resx">
+      <DependentUpon>LabelNameAndValue.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\UcVehicleImage.resx">
+      <DependentUpon>UcVehicleImage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\Main\View\UserControls\UcVerticalLabelText.resx" />
+    <EmbeddedResource Include="Customer\LocalPackage\MIPCControl\View\MIPCViewForm.resx">
+      <DependentUpon>MIPCViewForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCClassificationForm.resx">
+      <DependentUpon>MIPCClassificationForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\MIPCControl\View\UserControlForm\MIPCMotionCommandForm.resx">
+      <DependentUpon>MIPCMotionCommandForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\MIPCControl\View\UserControl\MIPCInfo.resx">
+      <DependentUpon>MIPCInfo.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\MoveControl\View\MoveControlForm.resx">
+      <DependentUpon>MoveControlForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Customer\LocalPackage\MoveControl\View\UserControl\JogPitchLocateData.resx">
+      <DependentUpon>JogPitchLocateData.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Main\View\ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -319,9 +593,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Customer\LocalPackage\Control\" />
-    <Folder Include="Customer\LocalPackage\Model\" />
-    <Folder Include="Customer\LocalPackage\View\" />
+    <Folder Include="Customer\LocalPackage\LoadUnloadControl\View\" />
     <Folder Include="SafetySensor\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

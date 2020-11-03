@@ -1,10 +1,12 @@
 ﻿using com.mirle.aka.sc.ProtocolFormat.ase.agvMessage;
+using Mirle.Agv.Utmc.Customer;
 using Mirle.Agv.Utmc.Model;
 using Mirle.Agv.Utmc.Model.Configs;
 using Mirle.Agv.Utmc.Model.TransferSteps;
 using Mirle.Agv.Utmc.Tools;
 using Mirle.Tools;
 using Newtonsoft.Json;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +37,8 @@ namespace Mirle.Agv.Utmc.Controller
         public Battery.IBatteryHandler BatteryHandler { get; set; }
         public Move.IMoveHandler MoveHandler { get; set; }
         public ConnectionMode.IConnectionModeHandler ConnectionModeHandler { get; set; }
+
+        public LocalPackage LocalPackage { get; set; }
 
         #endregion
 
@@ -129,7 +133,7 @@ namespace Mirle.Agv.Utmc.Controller
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
                 filename = "BatteryLog.json";
-                Vehicle.BatteryLog = ReadFromJsonFilename<BatteryLog>(filename);                
+                Vehicle.BatteryLog = ReadFromJsonFilename<BatteryLog>(filename);
                 InitialSoc = Vehicle.BatteryLog.InitialSoc;
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, $"讀寫 {filename}"));
 
@@ -179,10 +183,24 @@ namespace Mirle.Agv.Utmc.Controller
                 mapHandler = new MapHandler();
                 agvcConnector = new AgvcConnector(this);
 
-                RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
-                BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
-                MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
-                ConnectionModeHandler = new ConnectionMode.NullObjConnectionModeHandler(Vehicle.AutoState);
+                if (Vehicle.MainFlowConfig.IsSimulation)
+                {
+                    RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotLeft);
+                    BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
+                    MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
+                    ConnectionModeHandler = new ConnectionMode.NullObjConnectionModeHandler(Vehicle.AutoState);
+                }
+                else
+                {
+                    LocalPackage = new LocalPackage();
+                    LocalPackage.OnLocalPackageComponentIntialDoneEvent += LocalPackage_OnLocalPackageComponentIntialDoneEvent;
+                    LocalPackage.InitialLocalMain();
+
+                    RobotHandler = new Robot.UtmcRobotAdapter(LocalPackage);
+                    BatteryHandler = new Battery.UtmcBatteryAdapter(LocalPackage);
+                    MoveHandler = new Move.UtmcMoveAdapter(LocalPackage);
+                    ConnectionModeHandler = new ConnectionMode.UtmcConnectionModeAdapter(LocalPackage);
+                }
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
             }
@@ -192,6 +210,11 @@ namespace Mirle.Agv.Utmc.Controller
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(false, "控制層"));
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
+        }
+
+        private void LocalPackage_OnLocalPackageComponentIntialDoneEvent(object sender, InitialEventArgs e)
+        {
+            OnComponentIntialDoneEvent?.Invoke(this, e);
         }
 
         private void VehicleInitial()

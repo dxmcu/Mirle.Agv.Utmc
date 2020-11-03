@@ -1,4 +1,5 @@
-﻿using Mirle.Agv.Utmc.Model;
+﻿using Mirle.Agv.Utmc.Customer;
+using Mirle.Agv.Utmc.Model;
 using Mirle.Agv.Utmc.Tools;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,12 @@ namespace Mirle.Agv.Utmc.Move
         public event EventHandler<bool> OnOpPauseOrResumeEvent;
         public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
         public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
+        public LocalPackage LocalPackage { get; set; }
+
+        public UtmcMoveAdapter(LocalPackage localPackage)
+        {
+            this.LocalPackage = localPackage;
+        }
 
         public void GetMoveStatus()
         {
