@@ -172,7 +172,8 @@
         Pause,
         Stoping,
         Block,
-        Error
+        Error,
+        ReserveStop
     }
 
     public enum EnumCarrierSlotState
@@ -201,7 +202,7 @@
     {
         Fail,
         Arrival,
-        EndArrival
+        EndArrival        
     }
 
     public enum EnumIsExecute

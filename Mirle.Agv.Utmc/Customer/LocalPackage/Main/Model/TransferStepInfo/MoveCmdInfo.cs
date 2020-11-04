@@ -24,5 +24,8 @@ namespace Mirle.Agv.INX.Model
         public bool IsMoveEndDoLoadUnload { get; set; } = false;
 
         public bool IsAutoCommand { get; set; } = false;
+
+        public List<string> AddressIds { get; set; } = new List<string>();
+        public List<string> SectionIds { get; set; } = new List<string>();
     }
 }

@@ -55,24 +55,25 @@ namespace Mirle.Agv.Utmc.Robot
         }
 
         public void DoRobotCommandFor(RobotCommand robotCommand)
-        {
-            SpinWait.SpinUntil(() => IsReadyForRobotCommand(), 123);
-
+        {          
             if (IsReadyForRobotCommand())
             {
-                string addressID = robotCommand.PortAddressId;
-                EnumLoadUnload enumLoadUnload = GetEnumLoadUnloadFrom(robotCommand);
-                if (!LocalPackage.MainFlowHandler.LoadUnloadCommand(addressID, enumLoadUnload))
+                Task.Run(() =>
                 {
-                    OnLogDebugEvent?.Invoke(this, new MessageHandlerArgs()
+                    string addressID = robotCommand.PortAddressId;
+                    EnumLoadUnload enumLoadUnload = GetEnumLoadUnloadFrom(robotCommand);
+                    if (!LocalPackage.MainFlowHandler.LoadUnloadCommand(addressID, enumLoadUnload))
                     {
-                        ClassMethodName = GetType().Name + ":" + System.Reflection.MethodBase.GetCurrentMethod().Name,
-                        Message = "LocalPackage.MainFlowHandler.LoadUnloadCommand return fail."
-                    });
+                        OnLogDebugEvent?.Invoke(this, new MessageHandlerArgs()
+                        {
+                            ClassMethodName = GetType().Name + ":" + System.Reflection.MethodBase.GetCurrentMethod().Name,
+                            Message = "LocalPackage.MainFlowHandler.LoadUnloadCommand return fail."
+                        });
 
-                    //TODO : Vertify will local package publish robot fail event?
-                    //OnRobotEndEvent?.Invoke(this, EnumRobotEndType.RobotError);
-                }
+                        //TODO : Vertify will local package publish robot fail event?
+                        //OnRobotEndEvent?.Invoke(this, EnumRobotEndType.RobotError);
+                    }
+                });
             }
             else
             {

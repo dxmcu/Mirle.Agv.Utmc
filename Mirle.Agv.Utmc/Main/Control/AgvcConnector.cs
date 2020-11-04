@@ -1414,7 +1414,7 @@ namespace Mirle.Agv.Utmc.Controller
         }
         public void CSTStatusReport()
         {
-            if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Empty)
+            if (Vehicle.CarrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Empty)
             {
                 Send_Cmd136_CstRemove(EnumSlotNumber.L);
             }
@@ -1422,15 +1422,15 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 Send_Cmd136_CstIdReadReport(EnumSlotNumber.L); //200625 dabid+
             }
-            Thread.Sleep(50);
-            if (Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty)
-            {
-                Send_Cmd136_CstRemove(EnumSlotNumber.R);
-            }
-            else
-            {
-                Send_Cmd136_CstIdReadReport(EnumSlotNumber.R); //200625 dabid+
-            }
+            //Thread.Sleep(50);
+            //if (Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty)
+            //{
+            //    Send_Cmd136_CstRemove(EnumSlotNumber.R);
+            //}
+            //else
+            //{
+            //    Send_Cmd136_CstIdReadReport(EnumSlotNumber.R); //200625 dabid+
+            //}
         }
         private void ShowTransferCmdToForm(AgvcTransferCommand transferCommand)
         {
@@ -1700,10 +1700,10 @@ namespace Mirle.Agv.Utmc.Controller
             report.CurrentExcuteCmdId = Vehicle.TransferCommand.CommandId;
             report.ActionStatus = Vehicle.ActionStatus;
 
-            report.HasCstL = Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
-            report.CstIdL = Vehicle.CarrierSlotLeft.CarrierId;
-            report.HasCstR = Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
-            report.CstIdR = Vehicle.CarrierSlotRight.CarrierId;
+            report.HasCstL = Vehicle.CarrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
+            report.CstIdL = Vehicle.CarrierSlotStatus.CarrierId;
+            //report.HasCstR = Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
+            //report.CstIdR = Vehicle.CarrierSlotRight.CarrierId;
 
             return report;
         }
@@ -1735,10 +1735,10 @@ namespace Mirle.Agv.Utmc.Controller
                 response.ErrorStatus = Vehicle.ErrorStatus;
                 response.ObstDistance = Vehicle.ObstDistance;
                 response.ObstVehicleID = Vehicle.ObstVehicleID;
-                response.HasCstL = Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
-                response.CstIdL = Vehicle.CarrierSlotLeft.CarrierId;
-                response.HasCstR = Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
-                response.CstIdR = Vehicle.CarrierSlotRight.CarrierId;
+                response.HasCstL = Vehicle.CarrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
+                response.CstIdL = Vehicle.CarrierSlotStatus.CarrierId;
+                //response.HasCstR = Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Empty ? VhLoadCSTStatus.NotExist : VhLoadCSTStatus.Exist;
+                //response.CstIdR = Vehicle.CarrierSlotRight.CarrierId;
                 response.ChargeStatus = VhChargeStatusParse(Vehicle.IsCharging);
                 response.BatteryCapacity = (uint)Vehicle.BatteryStatus.Percentage;
                 response.BatteryTemperature = (int)Vehicle.BatteryStatus.Temperature;
@@ -2067,12 +2067,12 @@ namespace Mirle.Agv.Utmc.Controller
                                 {
                                     switch (report.Location)
                                     {
-                                        case AGVLocation.Right:
-                                            Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
-                                            OnCstRenameEvent?.Invoke(this, EnumSlotNumber.R);
-                                            break;
+                                        //case AGVLocation.Right:
+                                        //    Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
+                                        //    OnCstRenameEvent?.Invoke(this, EnumSlotNumber.R);
+                                        //    break;
                                         case AGVLocation.Left:
-                                            Vehicle.CarrierSlotLeft.CarrierId = response.RenameCarrierID;
+                                            Vehicle.CarrierSlotStatus.CarrierId = response.RenameCarrierID;
                                             OnCstRenameEvent?.Invoke(this, EnumSlotNumber.L);
                                             break;
                                         case AGVLocation.None:
@@ -2098,11 +2098,11 @@ namespace Mirle.Agv.Utmc.Controller
                                             switch (cmd.SlotNumber)
                                             {
                                                 case EnumSlotNumber.L:
-                                                    Vehicle.CarrierSlotLeft.CarrierId = response.RenameCarrierID;
+                                                    Vehicle.CarrierSlotStatus.CarrierId = response.RenameCarrierID;
                                                     break;
-                                                case EnumSlotNumber.R:
-                                                    Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
-                                                    break;
+                                                //case EnumSlotNumber.R:
+                                                //    Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
+                                                //    break;
                                                 default:
                                                     break;
                                             }
@@ -2126,11 +2126,11 @@ namespace Mirle.Agv.Utmc.Controller
                                             switch (cmd.SlotNumber)
                                             {
                                                 case EnumSlotNumber.L:
-                                                    Vehicle.CarrierSlotLeft.CarrierId = response.RenameCarrierID;
+                                                    Vehicle.CarrierSlotStatus.CarrierId = response.RenameCarrierID;
                                                     break;
-                                                case EnumSlotNumber.R:
-                                                    Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
-                                                    break;
+                                                //case EnumSlotNumber.R:
+                                                //    Vehicle.CarrierSlotRight.CarrierId = response.RenameCarrierID;
+                                                //    break;
                                                 default:
                                                     break;
                                             }
@@ -2183,7 +2183,7 @@ namespace Mirle.Agv.Utmc.Controller
         public void SendRecv_Cmd136_CstIdReadReport()
         {
             MoveStatus aseMoveStatus = new MoveStatus(Vehicle.MoveStatus);
-            CarrierSlotStatus aseCarrierSlotStatus = Vehicle.TransferCommand.SlotNumber == EnumSlotNumber.L ? Vehicle.CarrierSlotLeft : Vehicle.CarrierSlotRight;
+            CarrierSlotStatus aseCarrierSlotStatus = Vehicle.GetCarrierSlotStatusFrom(Vehicle.TransferCommand.SlotNumber);
 
             try
             {
@@ -2301,22 +2301,22 @@ namespace Mirle.Agv.Utmc.Controller
             ID_35_CST_ID_RENAME_REQUEST receive = (ID_35_CST_ID_RENAME_REQUEST)e.objPacket;
             var result = false;
 
-            if (Vehicle.CarrierSlotLeft.CarrierId == receive.OLDCSTID.Trim())
+            if (Vehicle.CarrierSlotStatus.CarrierId == receive.OLDCSTID.Trim())
             {
-                CarrierSlotStatus aseCarrierSlotStatus = Vehicle.CarrierSlotLeft;
+                CarrierSlotStatus aseCarrierSlotStatus = Vehicle.CarrierSlotStatus;
                 aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Loading;
                 aseCarrierSlotStatus.CarrierId = receive.NEWCSTID;
                 OnRenameCassetteIdEvent?.Invoke(this, aseCarrierSlotStatus);
                 result = true;
             }
-            else if (Vehicle.CarrierSlotRight.CarrierId == receive.OLDCSTID.Trim())
-            {
-                CarrierSlotStatus aseCarrierSlotStatus = Vehicle.CarrierSlotRight;
-                aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Loading;
-                aseCarrierSlotStatus.CarrierId = receive.NEWCSTID;
-                OnRenameCassetteIdEvent?.Invoke(this, aseCarrierSlotStatus);
-                result = true;
-            }
+            //else if (Vehicle.CarrierSlotRight.CarrierId == receive.OLDCSTID.Trim())
+            //{
+            //    CarrierSlotStatus aseCarrierSlotStatus = Vehicle.CarrierSlotRight;
+            //    aseCarrierSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Loading;
+            //    aseCarrierSlotStatus.CarrierId = receive.NEWCSTID;
+            //    OnRenameCassetteIdEvent?.Invoke(this, aseCarrierSlotStatus);
+            //    result = true;
+            //}
 
             int replyCode = result ? 0 : 1;
             Send_Cmd135_CarrierIdRenameResponse(e.iSeqNum, replyCode);

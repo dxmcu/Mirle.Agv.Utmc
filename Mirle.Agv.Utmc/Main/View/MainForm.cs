@@ -218,7 +218,7 @@ namespace Mirle.Agv.Utmc.View
 
             UpdateAgvlConnection();
 
-            if (Vehicle.CarrierSlotLeft.EnumCarrierSlotState == EnumCarrierSlotState.Loading || Vehicle.CarrierSlotRight.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
+            if (Vehicle.CarrierSlotStatus.EnumCarrierSlotState == EnumCarrierSlotState.Loading)
             {
                 mainFlowHandler.RobotHandler.GetRobotAndCarrierSlotStatus();
             }
@@ -1109,19 +1109,12 @@ namespace Mirle.Agv.Utmc.View
                 ucRobotHome.TagValue = aseRobotStatus.IsHome.ToString();
                 ucRobotHome.TagColor = aseRobotStatus.IsHome ? Color.Transparent : Color.OrangeRed;
 
-                CarrierSlotStatus slotL = new CarrierSlotStatus(Vehicle.CarrierSlotLeft);
-                CarrierSlotStatus slotR = new CarrierSlotStatus(Vehicle.CarrierSlotRight);
+                CarrierSlotStatus slotL = new CarrierSlotStatus(Vehicle.CarrierSlotStatus);
                 ucRobotSlotLState.TagValue = slotL.EnumCarrierSlotState.ToString();
                 ucRobotSlotLId.TagValue = slotL.CarrierId;
                 ucLCstId.TagValue = slotL.CarrierId;
 
-                ucRobotSlotRState.TagValue = slotR.EnumCarrierSlotState.ToString();
-                ucRobotSlotRId.TagValue = slotR.CarrierId;
-                ucRCstId.TagValue = slotR.CarrierId;
-
-                ucVehicleImage.Loading = slotL.EnumCarrierSlotState != EnumCarrierSlotState.Empty || slotR.EnumCarrierSlotState != EnumCarrierSlotState.Empty
-                    ? true
-                    : false;
+                ucVehicleImage.Loading = slotL.EnumCarrierSlotState != EnumCarrierSlotState.Empty ;
 
             }
             catch (Exception ex)

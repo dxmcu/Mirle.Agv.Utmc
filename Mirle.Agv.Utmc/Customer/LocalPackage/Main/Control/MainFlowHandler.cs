@@ -35,7 +35,6 @@ namespace Mirle.Agv.INX.Controller
 
         public LocalData localData = LocalData.Instance;
 
-
         private void MiidlerInfo()
         {
             /// 充電相關資訊.

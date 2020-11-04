@@ -37,13 +37,13 @@ namespace Mirle.Agv.Utmc.Battery
             {
                 try
                 {
-                    System.Threading.Thread.Sleep(2000);
+                    SpinWait.SpinUntil(() => false, 2000);
                     IsCharging = true;
                     OnUpdateChargeStatusEvent?.Invoke(this, IsCharging);
 
                     while (BatteryStatus.Percentage < 100 && IsCharging)
                     {
-                        System.Threading.Thread.Sleep(2000);
+                        SpinWait.SpinUntil(() => false, 2000);
 
                         BatteryStatus.Percentage = Math.Min(BatteryStatus.Percentage + 10, 100);
 
@@ -59,7 +59,7 @@ namespace Mirle.Agv.Utmc.Battery
                     });
                 }
 
-                System.Threading.Thread.Sleep(2000);
+                SpinWait.SpinUntil(() => false, 2000);
 
                 IsCharging = false;
                 OnUpdateChargeStatusEvent?.Invoke(this, IsCharging);
@@ -72,7 +72,7 @@ namespace Mirle.Agv.Utmc.Battery
             {
                 Task.Run(() =>
                 {
-                    System.Threading.Thread.Sleep(2000);
+                    SpinWait.SpinUntil(() => false, 2000);
                     IsCharging = false;
                 });
             }

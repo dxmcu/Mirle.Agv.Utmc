@@ -17,8 +17,8 @@ namespace Mirle.Agv.Utmc.Move
         public event EventHandler<bool> OnOpPauseOrResumeEvent;
 
         public void SetMovingGuide(Model.MovingGuide movingGuide);
-        public void PartMoveBegin();
-        public void PartMoveEnd(EnumSlotSelect openSlot = EnumSlotSelect.None);
+        //public void PartMoveBegin();
+        //public void PartMoveEnd(EnumSlotSelect openSlot = EnumSlotSelect.None);
         public void ReserveOkPartMove(Model.MapSection mapSection);
         public void StopMove();
         public void PauseMove();

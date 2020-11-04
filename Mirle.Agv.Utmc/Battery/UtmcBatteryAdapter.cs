@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Battery
@@ -45,12 +46,36 @@ namespace Mirle.Agv.Utmc.Battery
 
         public void StartCharge(EnumAddressDirection chargeDirection)
         {
-            LocalPackage.MainFlowHandler.StartChargingByAddressID(Vehicle.Instance.MoveStatus.LastAddress.Id);
+            if (!LocalPackage.MainFlowHandler.localData.MIPCData.Charging)
+            {
+                Task.Run(() =>
+                {
+                    LocalPackage.MainFlowHandler.StartChargingByAddressID(Vehicle.Instance.MoveStatus.LastAddress.Id);
+                    SpinWait.SpinUntil(() => LocalPackage.MainFlowHandler.localData.MIPCData.Charging, 30 * 1000);
+                    OnUpdateChargeStatusEvent?.Invoke(this, LocalPackage.MainFlowHandler.localData.MIPCData.Charging);
+                });
+            }
+            else
+            {
+                OnUpdateChargeStatusEvent?.Invoke(this, LocalPackage.MainFlowHandler.localData.MIPCData.Charging);
+            }
         }
 
         public void StopCharge()
         {
-            LocalPackage.MainFlowHandler.StopCharging();
+            if (LocalPackage.MainFlowHandler.localData.MIPCData.Charging)
+            {
+                Task.Run(() =>
+                {
+                    LocalPackage.MainFlowHandler.StopCharging();
+                    SpinWait.SpinUntil(() => !LocalPackage.MainFlowHandler.localData.MIPCData.Charging, 30 * 1000);
+                    OnUpdateChargeStatusEvent?.Invoke(this, LocalPackage.MainFlowHandler.localData.MIPCData.Charging);
+                });
+            }
+            else
+            {
+                OnUpdateChargeStatusEvent?.Invoke(this, LocalPackage.MainFlowHandler.localData.MIPCData.Charging);
+            }
         }
     }
 }

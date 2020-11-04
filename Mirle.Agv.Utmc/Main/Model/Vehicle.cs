@@ -33,7 +33,7 @@ namespace Mirle.Agv.Utmc.Model
         public bool IsLocalConnect { get; set; } = false;
         public MoveStatus MoveStatus { get; set; } = new MoveStatus();
         public RobotStatus RobotStatus { get; set; } = new RobotStatus();
-        public CarrierSlotStatus CarrierSlotLeft { get; set; } = new CarrierSlotStatus();
+        public CarrierSlotStatus CarrierSlotStatus { get; set; } = new CarrierSlotStatus();
         public CarrierSlotStatus CarrierSlotRight { get; set; } = new CarrierSlotStatus(EnumSlotNumber.R);
         public bool IsCharging { get; set; } = false;
         public BatteryStatus BatteryStatus { get; set; } = new BatteryStatus();
@@ -91,7 +91,7 @@ namespace Mirle.Agv.Utmc.Model
                     return this.CarrierSlotRight;
                 case EnumSlotNumber.L:
                 default:
-                    return this.CarrierSlotLeft;
+                    return this.CarrierSlotStatus;
             }
         }
 
