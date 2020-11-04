@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using com.mirle.aka.sc.ProtocolFormat.ase.agvMessage;
+using TcpIpClientSample;
 using Mirle.Agv.Utmc.Tools;
 using Newtonsoft.Json;
 
@@ -17,7 +17,7 @@ namespace Mirle.Agv.Utmc.Model
         public string FromAddressId { get; set; } = "";
         public string ToAddressId { get; set; } = "";
         public uint GuideDistance { get; set; } = 0;
-        public VhStopSingle ReserveStop { get; set; } = VhStopSingle.Off;
+        public VhStopSingle ReserveStop { get; set; } = VhStopSingle.StopSingleOff;
         public List<MapSection> MovingSections { get; set; } = new List<MapSection>();
         public int MovingSectionsIndex { get; set; } = 0;
         public ushort SeqNum { get; set; }
@@ -30,16 +30,16 @@ namespace Mirle.Agv.Utmc.Model
 
         public MovingGuide() { }
 
-        public MovingGuide(ID_38_GUIDE_INFO_RESPONSE response)
-        {
-            var info = response.GuideInfoList[0];
-            this.GuideSectionIds = info.GuideSections.ToList();
-            this.GuideAddressIds = info.GuideAddresses.ToList();
-            this.FromAddressId = info.FromTo.From;
-            this.ToAddressId = info.FromTo.To;
-            this.GuideDistance = info.Distance;
-            this.CommandId = Vehicle.Instance.MovingGuide.CommandId;
-        }
+        //public MovingGuide(ID_38_GUIDE_INFO_RESPONSE response)
+        //{
+        //    var info = response.GuideInfoList[0];
+        //    this.GuideSectionIds = info.GuideSections.ToList();
+        //    this.GuideAddressIds = info.GuideAddresses.ToList();
+        //    this.FromAddressId = info.FromTo.From;
+        //    this.ToAddressId = info.FromTo.To;
+        //    this.GuideDistance = info.Distance;
+        //    this.CommandId = Vehicle.Instance.MovingGuide.CommandId;
+        //}
 
         public MovingGuide(MovingGuide movingGuide)
         {
@@ -63,7 +63,7 @@ namespace Mirle.Agv.Utmc.Model
             this.GuideAddressIds = request.GuideAddresses.Any() ? request.GuideAddresses.ToList() : new List<string>();
             this.SeqNum = seqNum;
             this.CommandId = string.IsNullOrEmpty(Vehicle.Instance.MovingGuide.CommandId) ? "" : Vehicle.Instance.MovingGuide.CommandId;
-            this.ReserveStop = VhStopSingle.On;
+            this.ReserveStop = VhStopSingle.StopSingleOn;
         }
 
         public string GetJsonInfo()

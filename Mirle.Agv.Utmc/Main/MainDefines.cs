@@ -1,6 +1,14 @@
 ﻿namespace Mirle.Agv.Utmc
 {
     #region MainEnums
+
+    public enum CommandState
+    {
+        None,
+        LoadEnroute,
+        UnloadEnroute
+    }
+
     public enum EnumSectionType
     {
         None,

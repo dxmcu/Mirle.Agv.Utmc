@@ -8,11 +8,6 @@
 
 // [START declaration]
 syntax = "proto3";
-
-option cc_enable_arenas = true;
-option go_package = "github.com/golang/protobuf/ptypes/timestamp";
-option java_multiple_files = true;
-option objc_class_prefix = "GPB";
 package tutorial;
 // [END declaration]
 
@@ -22,7 +17,7 @@ option java_outer_classname = "AddressBookProtos";
 // [END java_declaration]
 
 // [START csharp_declaration]
-option csharp_namespace = "com.mirle.aka.sc.ProtocolFormat.ase.agvMessage";
+option csharp_namespace = "TcpIpClientSample";
 // [END csharp_declaration]
 
 // [START messages]
@@ -40,14 +35,20 @@ message Timestamp {
   int32 nanos = 2;
 }
 
-  enum CommandActionType {
+  enum ActiveType {
     MOVE = 0;
     LOAD = 1;
     UNLOAD = 2;
     LOADUNLOAD = 3;
     HOME = 4;
     OVERRIDE = 5;
+	CSTIDRENAME = 6;
+	MTLHOME = 7;
 	MOVETOCHARGER = 10;
+	SYSTEMOUT = 11;
+	SYSTEMIN = 12;
+	TECHINGMOVE = 13;
+	ROUND=99;
   }
    enum EventType {
     LoadArrivals = 0;
@@ -61,27 +62,29 @@ message Timestamp {
 	VHLoading = 11;
 	VHUnloading = 12;
 	BCRRead = 13;
-	CSTRemove = 14;
 	BlockRelease = 21;
-	PIOError = 91;
   }
 	enum CompleteStatus {
-	CompleteStatus_Move = 0;
-    CompleteStatus_Load = 1;
-    CompleteStatus_Unload = 2;
-    CompleteStatus_Loadunload = 3;
-	CompleteStatus_MoveToCharger = 10;
-	CompleteStatus_Cancel = 20;
-	CompleteStatus_Abort = 21;
-	CompleteStatus_VehicleAbort = 22;
-	CompleteStatus_IDMisMatch = 23;
-	CompleteStatus_IDReadFailed = 24;
-	CompleteStatus_InterlockError = 64;
-
-	CompleteStatus_LongTimeInaction = 98;
-	CompleteStatus_ForceFinishByOp = 99;
+	CmpStatusMove = 0;
+    CmpStatusLoad = 1;
+    CmpStatusUnload = 2;
+    CmpStatusLoadunload = 3;
+    CmpStatusHome = 4;
+    CmpStatusOverride = 5;
+	CmpStatusCstIDRenmae = 6;
+	CmpStatusMTLHome = 7;
+	CmpStatusMoveToCharger = 10;
+	CmpStatusSystemOut = 11;
+	CmpStatusSystemIn = 12;
+	CmpStatusTechingMove = 13;
+	CmpStatusCancel = 20;
+	CmpStatusAbort = 21;
+	CmpStatusVehicleAbort = 22;
+	CmpStatusIDMisMatch = 23;
+	CmpStatusIDReadFailed = 24;
+	CmpStatusInterlockError = 64;
   }
-  	enum CancelActionType {
+  	enum CMDCancelType {
 	CMD_None = 0;
 	CMD_Cancel = 20;
 	CMD_Abort = 21;
@@ -95,10 +98,11 @@ message Timestamp {
   }
    enum PauseType {
 	PauseType_None= 0;
-	PauseType_Normal = 1;
+	PauseType_OHxC= 1;
 	PauseType_Block = 2;
 	PauseType_EarthQuake = 4;
 	PauseType_Safety = 5;
+	PauseType_Reserve = 6;
 	PauseType_All = 9;
   }
    enum VhGuideStatus{
@@ -120,16 +124,6 @@ message Timestamp {
 	Left = 2;
 	Right = 3;
   }
-
-   enum CouplerStatus{
-    CouplerStatus_Disable = 0;
-	CouplerStatus_Enable= 1;
-  }
-  message CouplerInfo {
-	string AddressID = 1;
-	CouplerStatus CouplerStatus = 2;
-   }
-
 
   message ID_1_HOST_BASIC_INFO_VERSION_REP {
 		string DataDateTime_Year = 1;
@@ -161,11 +155,15 @@ message Timestamp {
 		int32 ReplyCode = 1;
   }
 
-
-   message ID_11_COUPLER_INFO_REP {
-	repeated CouplerInfo CouplerInfos = 1;
+   message ID_11_BASIC_INFO_REP {
+		int32 TravelBasicDataCount = 1;
+		int32 SectionDataCount = 2;
+		int32 AddressDataCount = 3;
+		int32 ScaleDataCount = 4;
+		int32 ContrlDataCount = 5;
+		int32 GuideDataCount = 6;
   }
-   message ID_111_COUPLER_INFO_RESPONSE {
+   message ID_111_BASIC_INFO_RESPONSE {
 		int32 ReplyCode = 1;
   }
 
@@ -315,19 +313,21 @@ message Timestamp {
 
   message ID_31_TRANS_REQUEST {
   	string Cmd_ID = 1;
-    CommandActionType CommandAction = 2;
+    ActiveType ActType = 2;
 	string LoadAdr =3;
 	string DestinationAdr = 4;
-	string CST_ID = 5;
-	string LoadPortID = 6;
-	string UnloadPortID = 7;
-	bool IsLoadPortHasGate = 8;
-	bool IsUnloadPortHasGate = 9;
-	string LOT_ID = 10;
+	uint32 Sec_Distance = 5;
+	string CST_ID = 6;
+	repeated string Guide_Segments_StartToLoad = 7;
+	repeated string Guide_Sections_StartToLoad = 8;
+	repeated string Guide_Addresses_StartToLoad  =9;
+	repeated string Guide_Segments_ToDestination = 10;
+	repeated string Guide_Sections_ToDestination = 11;
+	repeated string Guide_Addresses_ToDestination = 12;
   }
   message ID_131_TRANS_RESPONSE {
   	string Cmd_ID = 1;
-	CommandActionType CommandAction = 2;
+	ActiveType ActType = 2;
 	int32 ReplyCode = 3;
 	string NgReason = 4;
   }
@@ -350,7 +350,13 @@ message Timestamp {
 
   message ID_32_TRANS_COMPLETE_RESPONSE {
 	int32 ReplyCode = 1;
-	int32 WaitTime = 2;
+  }
+
+  enum ControlType
+  {
+    Nothing = 0;
+	ControlType_Block = 4;
+	ControlType_HID = 5;
   }
 
   enum DriveDirction
@@ -358,6 +364,17 @@ message Timestamp {
     DriveDir_None =0;
 	DriveDir_Forward=1;
 	DriveDir_Reverse=2;
+  }
+
+  message ID_33_CONTROL_ZONE_REPUEST_CANCEL_REQUEST {
+  	ControlType ControlType = 1;
+	string CancelSecID = 2;
+  }
+
+    message ID_133_CONTROL_ZONE_REPUEST_CANCEL_RESPONSE {
+	ControlType ControlType = 1;
+	string CancelSecID = 2;
+	int32 ReplyCode = 3;
   }
 
   message ID_134_TRANS_EVENT_REP {
@@ -394,24 +411,6 @@ message Timestamp {
 	BCR_MisMatch = 2;
   }
 
-  enum ReplyActionType
-  {
-	ReplyActionType_Continue = 0;
-	ReplyActionType_Wait = 1;
-	ReplyActionType_Retry = 2;
-	ReplyActionType_Cancel = 20;
-	ReplyActionType_Abort = 21;
-	ReplyActionType_Cancel_ID_Misnatch = 23;
-	ReplyActionType_Cancel_ID_Read_Failed = 24;
-	ReplyActionType_Cancel_PID_Failed = 25;
-  }
-
-  enum AGVLocation
-  {
-	AGVLocation_Right=0;
-	AGVLocation_Left=1;
-	AGVLocation_None=2;
-  }
    message ID_136_TRANS_EVENT_REP {
     EventType EventType = 1;
 	repeated ReserveInfo ReserveInfos = 2;
@@ -422,8 +421,6 @@ message Timestamp {
 	string CurrentSecID = 7;
 	uint32 Sec_Distance = 8;
 	BCRReadResult BCRReadResult =9;
-	string Cmd_ID =10;
-	AGVLocation Location = 11;
   }
 
   message ID_36_TRANS_EVENT_RESPONSE {
@@ -431,47 +428,25 @@ message Timestamp {
 	ReserveResult Is_Reserve_Success = 2;
 	PassType Is_Block_Pass = 3;
 	string RenameCarrierID = 4;
-	ReplyActionType ReplyAction = 5;
+	CMDCancelType ReplyActiveType = 5;
 	int32 ReplyCode = 6;	
 	repeated ReserveInfo ReserveInfos = 7;
-	string Cmd_ID = 8;
   }
-
 
   message ID_37_TRANS_CANCEL_REQUEST {
   	string Cmd_ID = 1;
-    CancelActionType CancelAction = 2;
+    CMDCancelType ActType = 2;
   }
   message ID_137_TRANS_CANCEL_RESPONSE {
   	string Cmd_ID = 1;
-    CancelActionType CancelAction = 2;
+    CMDCancelType ActType = 2;
 	int32 ReplyCode = 3;
-  }
-
-   message FromToAdr
-   {
-	string From = 1;
-	string To = 2;
-   }
-   message GuideInfo
-   {
-	FromToAdr FromTo = 1;
-	repeated string GuideSections = 2;
-	repeated string GuideAddresses = 3;
-	uint32 Distance = 4;
-   }
-
-   message ID_138_GUIDE_INFO_REQUEST {
-    repeated FromToAdr FromToAdrList = 1;
-  }
-
-  message ID_38_GUIDE_INFO_RESPONSE {
-    repeated GuideInfo GuideInfoList = 1;
   }
 
   message ID_39_PAUSE_REQUEST {
   	PauseEvent EventType = 1;
   	PauseType PauseType = 2;
+	repeated ReserveInfo ReserveInfos = 3;
   }
   message ID_139_PAUSE_RESPONSE {
 	PauseEvent EventType = 1;
@@ -480,6 +455,8 @@ message Timestamp {
 
   enum VHModeStatus {
     None = 0;
+    Initial_Power_OFF = 1;
+    Initial_Power_ON = 2;
     Manual = 3;
     Auto_Remote = 4;
     Auto_Local = 5;
@@ -501,8 +478,8 @@ message Timestamp {
     Exist = 1;
   }
   enum VhStopSingle{
-    VhStopSingle_Off = 0;
-	VhStopSingle_On = 1;
+    StopSingle_Off = 0;
+	StopSingle_On = 1;
   }
   enum VhChargeStatus{
     ChargeStatus_None = 0;
@@ -516,17 +493,6 @@ message Timestamp {
    message ID_141_MODE_CHANGE_RESPONSE {
    	 int32 ReplyCode = 1;
   }
-  
-  enum CommandState{
-    CommandState_None = 0;
-	CommandState_LoadEnroute = 1;
-	CommandState_UnloadEnroute = 2;
-  }
-  enum ShelfStatus{
-    ShelfStatus_Disable = 0;
-	ShelfStatus_Enable = 1;
-  }
-
 
   message ID_43_STATUS_REQUEST {
 	string SystemTime = 1;
@@ -550,30 +516,19 @@ message Timestamp {
 	string Stopped_Block_ID_= 15;
 	VhStopSingle Earthquake_Pause_tatus = 16;
 	VhStopSingle Safety_Pause_Status = 17;
-	string CmdId1 = 18;
-	CommandState CmsState_1 = 19;
-	string CmdId2 = 20;
-	CommandState CmsState_2 = 21;
-	VhLoadCSTStatus HasCst_L = 22;
-	string CstIdL = 23;
-	VhLoadCSTStatus HasCst_R = 24;
-	string CstIdR = 25;
-	DriveDirction DrivingDirection= 26;
-	int32 Steering_Wheel = 27;
-	uint32 BatteryCapacity = 28;
-	VhChargeStatus ChargeStatus = 29;
-	int32 BatteryTemperature = 30;
-	double XAxis = 31;
-	double YAxis = 32;
-	double DirectionAngle = 33;
-	double VehicleAngle = 34;
-	double Speed = 35;
-	repeated string WillPassGuideSection = 36;
-	string SystemTime = 37;
-	ShelfStatus ShelfStatus_L = 38;
-	ShelfStatus ShelfStatus_R = 39;
-	string CurrentExcuteCmdId = 40;
-	VhStopSingle OpPauseStatus = 41;
+	VhLoadCSTStatus HasCST = 18;
+	string Cmd_ID = 19;
+	string CST_ID = 20;
+	int32 Steering_Wheel = 21;
+	DriveDirction DrivingDirection= 22;
+	uint32 BatteryCapacity = 23;
+	VhChargeStatus ChargeStatus = 24;
+	int32 BatteryTemperature = 25;
+	double XAxis = 26;
+	double YAxis = 27;
+	double DirectionAngle = 28;
+	double VehicleAngle = 29;
+	double Speed = 30;
   }
 
   message ID_144_STATUS_CHANGE_REP {
@@ -594,31 +549,21 @@ message Timestamp {
 	string Stopped_Block_ID_= 15;
 	VhStopSingle Earthquake_Pause_tatus = 16;
 	VhStopSingle Safety_Pause_Status = 17;
-	string CmdId1 = 18;
-	CommandState CmsState_1 = 19;
-	string CmdId2 = 20;
-	CommandState CmsState_2 = 21;
-	VhLoadCSTStatus HasCst_L = 22;
-	string CstIdL = 23;
-	VhLoadCSTStatus HasCst_R = 24;
-	string CstIdR = 25;
-	DriveDirction DrivingDirection= 26;
-	int32 Steering_Wheel = 27;
-	uint32 BatteryCapacity = 28;
-	VhChargeStatus ChargeStatus = 29;
-	int32 BatteryTemperature = 30;
-	double XAxis = 31;
-	double YAxis = 32;
-	double DirectionAngle = 33;
-	double VehicleAngle = 34;
-	double Speed = 35;
-	repeated string WillPassGuideSection = 36;
-	string SystemTime = 37;
-	ShelfStatus ShelfStatus_L = 38;
-	ShelfStatus ShelfStatus_R = 39;
-	string CurrentExcuteCmdId = 40;
-	VhStopSingle OpPauseStatus = 41;
+	VhLoadCSTStatus HasCST = 18;
+	string Cmd_ID = 19;
+	string CST_ID = 20;
+	int32 Steering_Wheel = 21;
+	DriveDirction DrivingDirection= 22;
+	uint32 BatteryCapacity = 23;
+	VhChargeStatus ChargeStatus = 24;
+	int32 BatteryTemperature = 25;
+	double XAxis = 26;
+	double YAxis = 27;
+	double DirectionAngle = 28;
+	double VehicleAngle = 29;
+	double Speed = 30;
   }
+
   message ID_44_STATUS_CHANGE_RESPONSE {
 	int32 ReplyCode = 1;
   }
@@ -694,10 +639,11 @@ message Timestamp {
     message ID_94_ALARM_RESPONSE {
 	int32 ReplyCode = 1;
   }
+
+
   message WrapperMessage {
     int32 ID = 1000;
 	int32 SeqNum = 1001;    
-	string LocalSystemTime = 1002;
     oneof msg {
 
 		ID_1_HOST_BASIC_INFO_VERSION_REP Host_Basic_Info_Rep = 1;
@@ -706,8 +652,8 @@ message Timestamp {
 		ID_102_BASIC_INFO_VERSION_REP Basic_Info_Version_Rep = 102;
 		ID_2_BASIC_INFO_VERSION_RESPONSE Basic_Info_Version_Resp = 2;
 
-		ID_11_COUPLER_INFO_REP Coupler_Info_Rep = 11;
-		ID_111_COUPLER_INFO_RESPONSE Coupler_Info_Resp = 111;
+		ID_11_BASIC_INFO_REP Basic_Info_Rep = 11;
+		ID_111_BASIC_INFO_RESPONSE Basic_Info_Resp = 111;
 
 		ID_13_TAVELLING_DATA_REP Tavelling_Data_Rep = 13;
 		ID_113_TAVELLING_DATA_RESPONSE Tavelling_Data_Resp = 113;
@@ -745,14 +691,14 @@ message Timestamp {
 		ID_132_TRANS_COMPLETE_REPORT Tran_Cmp_Rep = 132;
 		ID_32_TRANS_COMPLETE_RESPONSE Tran_Cmp_Resp = 32;
 
+		ID_33_CONTROL_ZONE_REPUEST_CANCEL_REQUEST  Control_Zone_Req = 33;
+		ID_133_CONTROL_ZONE_REPUEST_CANCEL_RESPONSE Control_Zone_Resp = 133;
+
         ID_35_CST_ID_RENAME_REQUEST CST_ID_Rename_Req = 35;
         ID_135_CST_ID_RENAME_RESPONSE CST_ID_Rename_Resp = 135;
 
         ID_37_TRANS_CANCEL_REQUEST Trans_Cancel_Req = 37;
         ID_137_TRANS_CANCEL_RESPONSE Trans_Cancel_Resp = 137;
-
-		ID_138_GUIDE_INFO_REQUEST Guide_Info_Req = 138;
-        ID_38_GUIDE_INFO_RESPONSE Guide_Info_Resp = 38;
 
         ID_39_PAUSE_REQUEST Pause_Req = 39;
         ID_139_PAUSE_RESPONSE Pause_Resp = 139;
@@ -794,12 +740,5 @@ message Timestamp {
 		ID_94_ALARM_RESPONSE Alarm_Resp = 94;
 
     }   
- }
-	enum CurrentMessageVersion
-    {
-		v1_0_0=0;
-		v1_0_2=1;
-    }
-
-
+}
 // [END messages]

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Mirle.Agv.Utmc.Controller;
-using com.mirle.aka.sc.ProtocolFormat.ase.agvMessage;
+using TcpIpClientSample;
 using Google.Protobuf.Collections;
 using System.Reflection;
 
@@ -37,6 +37,10 @@ namespace Mirle.Agv.Utmc.Model
         public bool IsUnloadArrivalReply { get; set; } = false;
         public bool IsUnloadCompleteReply { get; set; } = false;
         public bool IsVitualPortUnloadArrivalReply { get; set; } = false;
+        public List<string> ToLoadAddressIds { get; set; } = new List<string>();
+        public List<string> ToLoadSectionIds { get; set; } = new List<string>();
+        public List<string> ToUnloadAddressIds { get; set; } = new List<string>();
+        public List<string> ToUnloadSectionIds { get; set; } = new List<string>();
 
         public AgvcTransferCommand()
         {
@@ -47,53 +51,56 @@ namespace Mirle.Agv.Utmc.Model
             CommandId = transRequest.CmdID.Trim();
             CassetteId = string.IsNullOrEmpty(transRequest.CSTID) ? "" : transRequest.CSTID.Trim();
             SeqNum = aSeqNum;
-            LotId = transRequest.LOTID.Trim();
 
-            InitialCommand(transRequest.CommandAction);
+            InitialCommand(transRequest.ActType);
 
             LoadAddressId = string.IsNullOrEmpty(transRequest.LoadAdr) ? "" : transRequest.LoadAdr.Trim();
             UnloadAddressId = string.IsNullOrEmpty(transRequest.DestinationAdr) ? "" : transRequest.DestinationAdr.Trim();
-            LoadPortId = string.IsNullOrEmpty(transRequest.LoadPortID) ? "" : transRequest.LoadPortID.Trim();
-            UnloadPortId = string.IsNullOrEmpty(transRequest.UnloadPortID) ? "" : transRequest.UnloadPortID.Trim();
+
+            ToLoadAddressIds = transRequest.GuideAddressesStartToLoad == null ? new List<string>() : transRequest.GuideAddressesStartToLoad.ToList();
+            ToLoadSectionIds = transRequest.GuideSectionsStartToLoad == null ? new List<string>() : transRequest.GuideSectionsStartToLoad.ToList();
+
+            ToUnloadAddressIds = transRequest.GuideAddressesToDestination == null ? new List<string>() : transRequest.GuideAddressesToDestination.ToList();
+            ToUnloadSectionIds = transRequest.GuideSectionsToDestination == null ? new List<string>() : transRequest.GuideSectionsToDestination.ToList();
         }
 
-        private void InitialCommand(CommandActionType commandAction)
+        private void InitialCommand(ActiveType activeType)
         {
-            switch (commandAction)
+            switch (activeType)
             {
-                case CommandActionType.Move:
+                case ActiveType.Move:
                     AgvcTransCommandType = EnumAgvcTransCommandType.Move;
-                    CompleteStatus = CompleteStatus.Move;
+                    CompleteStatus = CompleteStatus.CmpStatusMove;
                     TransferStep = EnumTransferStep.MoveToAddress;
                     EnrouteState = CommandState.None;
                     break;
-                case CommandActionType.Load:
+                case ActiveType.Load:
                     AgvcTransCommandType = EnumAgvcTransCommandType.Load;
-                    CompleteStatus = CompleteStatus.Load;
+                    CompleteStatus = CompleteStatus.CmpStatusLoad;
                     TransferStep = EnumTransferStep.MoveToLoad;
                     EnrouteState = CommandState.LoadEnroute;
                     break;
-                case CommandActionType.Unload:
+                case ActiveType.Unload:
                     AgvcTransCommandType = EnumAgvcTransCommandType.Unload;
-                    CompleteStatus = CompleteStatus.Unload;
+                    CompleteStatus = CompleteStatus.CmpStatusUnload;
                     TransferStep = EnumTransferStep.MoveToUnload;
                     EnrouteState = CommandState.UnloadEnroute;
                     break;
-                case CommandActionType.Loadunload:
+                case ActiveType.Loadunload:
                     AgvcTransCommandType = EnumAgvcTransCommandType.LoadUnload;
-                    CompleteStatus = CompleteStatus.Loadunload;
+                    CompleteStatus = CompleteStatus.CmpStatusLoadunload;
                     TransferStep = EnumTransferStep.MoveToLoad;
                     EnrouteState = CommandState.LoadEnroute;
                     break;
-                case CommandActionType.Movetocharger:
+                case ActiveType.Movetocharger:
                     AgvcTransCommandType = EnumAgvcTransCommandType.MoveToCharger;
-                    CompleteStatus = CompleteStatus.MoveToCharger;
+                    CompleteStatus = CompleteStatus.CmpStatusMoveToCharger;
                     TransferStep = EnumTransferStep.MoveToAddress;
                     EnrouteState = CommandState.None;
                     break;
-                case CommandActionType.Home:
+                case ActiveType.Home:
                     break;
-                case CommandActionType.Override:
+                case ActiveType.Override:
                     AgvcTransCommandType = EnumAgvcTransCommandType.Override;
                     //CompleteStatus = CompleteStatus.Loadunload;
                     break;
@@ -102,25 +109,25 @@ namespace Mirle.Agv.Utmc.Model
             }
         }
 
-        public CommandActionType GetCommandActionType()
+        public ActiveType GetCommandActionType()
         {
             switch (AgvcTransCommandType)
             {
                 case EnumAgvcTransCommandType.Move:
-                    return CommandActionType.Move;
+                    return ActiveType.Move;
                 case EnumAgvcTransCommandType.Load:
-                    return CommandActionType.Load;
+                    return ActiveType.Load;
                 case EnumAgvcTransCommandType.Unload:
-                    return CommandActionType.Unload;
+                    return ActiveType.Unload;
                 case EnumAgvcTransCommandType.LoadUnload:
-                    return CommandActionType.Loadunload;
+                    return ActiveType.Loadunload;
                 case EnumAgvcTransCommandType.Override:
-                    return CommandActionType.Override;
+                    return ActiveType.Override;
                 case EnumAgvcTransCommandType.MoveToCharger:
-                    return CommandActionType.Movetocharger;
+                    return ActiveType.Movetocharger;
                 case EnumAgvcTransCommandType.Else:
                 default:
-                    return CommandActionType.Home;
+                    return ActiveType.Home;
             }
         }
 
@@ -133,123 +140,21 @@ namespace Mirle.Agv.Utmc.Model
         {
             switch (CompleteStatus)
             {
-                case CompleteStatus.InterlockError:
-                case CompleteStatus.IdreadFailed:
-                case CompleteStatus.IdmisMatch:
-                case CompleteStatus.VehicleAbort:
-                case CompleteStatus.Abort:
-                case CompleteStatus.Cancel:
+                case CompleteStatus.CmpStatusInterlockError:
+                case CompleteStatus.CmpStatusIdreadFailed:
+                case CompleteStatus.CmpStatusIdmisMatch:
+                case CompleteStatus.CmpStatusVehicleAbort:
+                case CompleteStatus.CmpStatusAbort:
+                case CompleteStatus.CmpStatusCancel:
                     return true;
-                case CompleteStatus.Move:
-                case CompleteStatus.Load:
-                case CompleteStatus.Unload:
-                case CompleteStatus.Loadunload:
-                case CompleteStatus.MoveToCharger:
-                case CompleteStatus.LongTimeInaction:
-                case CompleteStatus.ForceFinishByOp:
+                case CompleteStatus.CmpStatusMove:
+                case CompleteStatus.CmpStatusLoad:
+                case CompleteStatus.CmpStatusUnload:
+                case CompleteStatus.CmpStatusLoadunload:
+                case CompleteStatus.CmpStatusMoveToCharger:
                 default:
                     return false;
             }
         }
     }
-
-    //public class AgvcMoveCmd : AgvcTransCmd
-    //{
-    //    public AgvcMoveCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //        try
-    //        {
-    //            UnloadAddressId = transRequest.DestinationAdr;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-    //        }
-    //    }
-    //}
-    //public class AgvcMoveToChargerCmd : AgvcMoveCmd
-    //{
-    //    public AgvcMoveToChargerCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-
-    //    }
-    //}
-
-    //public class AgvcLoadCmd : AgvcTransCmd
-    //{
-    //    public AgvcLoadCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //        try
-    //        {
-    //            LoadAddressId = transRequest.LoadAdr;
-    //            EnrouteState = CommandState.LoadEnroute;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-    //        }
-    //    }
-    //}
-
-    //public class AgvcUnloadCmd : AgvcTransCmd
-    //{
-    //    public AgvcUnloadCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //        try
-    //        {
-    //            UnloadAddressId = transRequest.DestinationAdr;
-    //            EnrouteState = CommandState.UnloadEnroute;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-    //        }
-    //    }
-    //}
-
-    //public class AgvcLoadunloadCmd : AgvcTransCmd
-    //{
-    //    public AgvcLoadunloadCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //        try
-    //        {
-    //            LoadAddressId = transRequest.LoadAdr;
-    //            UnloadAddressId = transRequest.DestinationAdr;
-    //            EnrouteState = CommandState.LoadEnroute;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-    //        }
-    //    }
-    //}
-
-    //public class AgvcHomeCmd : AgvcTransCmd
-    //{
-    //    public AgvcHomeCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //    }
-    //}
-
-    //public class AgvcOverrideCmd : AgvcTransCmd
-    //{
-    //    public AgvcOverrideCmd(ID_31_TRANS_REQUEST transRequest, ushort aSeqNum) : base(transRequest, aSeqNum)
-    //    {
-    //        try
-    //        {
-    //            if (!string.IsNullOrEmpty(transRequest.LoadAdr))
-    //            {
-    //                LoadAddressId = transRequest.LoadAdr;
-    //            }
-    //            if (!string.IsNullOrEmpty(transRequest.DestinationAdr))
-    //            {
-    //                UnloadAddressId = transRequest.DestinationAdr;
-    //            }
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-    //        }
-    //    }
-    //}
 }

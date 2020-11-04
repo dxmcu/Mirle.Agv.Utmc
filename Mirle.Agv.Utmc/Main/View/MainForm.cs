@@ -782,7 +782,7 @@ namespace Mirle.Agv.Utmc.View
         {
             try
             {
-                var reserveStop = Vehicle.MovingGuide.ReserveStop == com.mirle.aka.sc.ProtocolFormat.ase.agvMessage.VhStopSingle.On;
+                var reserveStop = Vehicle.MovingGuide.ReserveStop == TcpIpClientSample.VhStopSingle.StopSingleOn;
 
                 if (reserveStop)
                 {
