@@ -1194,10 +1194,10 @@ namespace Mirle.Agv.Utmc.View
                 switch (Vehicle.AutoState)
                 {
                     case EnumAutoState.Auto:
-                        mainFlowHandler.ConnectionModeHandler_OnModeChangeEvent(this, EnumAutoState.Manual);
+                        mainFlowHandler.ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                         break;
                     case EnumAutoState.Manual:
-                        mainFlowHandler.ConnectionModeHandler_OnModeChangeEvent(this, EnumAutoState.Auto);
+                        mainFlowHandler.ConnectionModeHandler.SetAutoState(EnumAutoState.Auto);
                         break;
                     case EnumAutoState.None:
                         break;

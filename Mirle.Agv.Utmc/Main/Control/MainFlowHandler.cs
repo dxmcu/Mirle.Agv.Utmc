@@ -3037,7 +3037,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        #region AsePackage        
+        #region LocalPackage        
 
         public object _ModeChangeLocker = new object();
 
@@ -3056,13 +3056,12 @@ namespace Mirle.Agv.Utmc.Controller
                             case EnumAutoState.Auto:
                                 GetAllStatusReport();
                                 ResetAllAlarmsFromAgvm();
-                                Thread.Sleep(3000);  //500-->3000
-                                CheckCanAuto();
+                                //CheckCanAuto();
                                 UpdateSlotStatus();
                                 Vehicle.MoveStatus.IsMoveEnd = false;
                                 break;
                             case EnumAutoState.Manual:
-                                ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
+                                //ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                                 break;
                             case EnumAutoState.None:
                                 break;
