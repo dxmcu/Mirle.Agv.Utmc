@@ -529,7 +529,6 @@ namespace Mirle.Agv.Utmc.Controller
                                 break;
                         }
                         Vehicle.MovingGuide.ToAddressId = endAddressId;
-                        //agvcConnector.AskGuideAddressesAndSections(endAddressId);
                     }
                     else
                     {
@@ -577,99 +576,6 @@ namespace Mirle.Agv.Utmc.Controller
             agvcConnector.SetupNeedReserveSections();
             agvcConnector.StatusChangeReport();
             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, Vehicle.MovingGuide.GetJsonInfo());
-        }
-
-        private bool IsFirstOrderDealVitualPort()
-        {
-            //if (Vehicle.TransferCommand.EnrouteState == CommandState.UnloadEnroute)
-            //{
-            //    if (string.IsNullOrEmpty(Vehicle.TransferCommand.UnloadPortId)) return false;
-            //    if (!Vehicle.Mapinfo.portMap.ContainsKey(Vehicle.TransferCommand.UnloadPortId)) return false;
-            //    return Vehicle.Mapinfo.portMap[Vehicle.TransferCommand.UnloadPortId].IsVitualPort;
-            //}
-            return false;
-        }
-
-        private void DealVitualPortUnloadArrivalReply()
-        {
-            try
-            {
-                //LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Vitual Port Unload Arrival Replyed. [{Vehicle.PortInfos.Count}]");
-                //Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToUnload;
-
-                //bool foundUnloadPort = false;
-                //var readyPorts = Vehicle.PortInfos.Where(portInfo => portInfo.IsInputMode && portInfo.IsAGVPortReady).ToList();
-                //if (readyPorts.Any())
-                //{
-                //    var sameAddressReadyPorts = readyPorts.Where(portInfo => portInfo.ID == Vehicle.MoveStatus.LastAddress.Id).ToList();
-                //    if (sameAddressReadyPorts.Any())
-                //    {
-                //        Vehicle.TransferCommand.UnloadPortId = sameAddressReadyPorts[0].ID;
-                //        foundUnloadPort = true;
-                //    }
-                //    else
-                //    {
-                //        foreach (var portInfo in readyPorts)
-                //        {
-                //            if (Vehicle.Mapinfo.portMap.ContainsKey(portInfo.ID))
-                //            {
-                //                var port = Vehicle.Mapinfo.portMap[portInfo.ID];
-                //                Vehicle.TransferCommand.UnloadAddressId = port.ReferenceAddressId;
-                //                Vehicle.TransferCommand.UnloadPortId = portInfo.ID;
-                //                foundUnloadPort = true;
-                //                break;
-                //            }
-                //        }
-                //    }
-                //}
-
-                //if (!foundUnloadPort)
-                //{
-                //    VitualPortReplyUnreadyFindFitLoadCommand();
-                //}
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
-        private void VitualPortReplyUnreadyFindFitLoadCommand()
-        {
-            //Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToUnload;
-
-            //bool foundNextCommand = false;
-
-            //if (!string.IsNullOrEmpty(Vehicle.MoveStatus.LastAddress.AgvStationId))
-            //{
-            //    if (Vehicle.Mapinfo.agvStationMap.ContainsKey(Vehicle.MoveStatus.LastAddress.AgvStationId))
-            //    {
-            //        foreach (var transferCommand in Vehicle.mapTransferCommands.Values.ToArray())
-            //        {
-            //            if (transferCommand.EnrouteState == CommandState.LoadEnroute)
-            //            {
-            //                if (transferCommand.CommandId != Vehicle.TransferCommand.CommandId)
-            //                {
-            //                    if (Vehicle.Mapinfo.agvStationMap[Vehicle.MoveStatus.LastAddress.AgvStationId].AddressIds.Contains(transferCommand.LoadAddressId))
-            //                    {
-            //                        //foundNextCommand = true;
-            //                        //transferCommand.TransferStep = EnumTransferStep.MoveToLoad;
-            //                        //Vehicle.TransferCommand = transferCommand;
-
-            //                        //LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Vitual port unload unready. Switch Load Command. [{Vehicle.TransferCommand.CommandId}][{Vehicle.PortInfos.Count}]");
-
-            //                        break;
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-
-            //if (!foundNextCommand)
-            //{
-            //    Thread.Sleep(2000);
-            //}
         }
 
         private void MoveToAddressEnd()
@@ -815,7 +721,6 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 var msg = $"MainFlow :  Get [ Override ]Command[{transferCommand.CommandId}],  start check .";
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
-
             }
             catch (Exception ex)
             {
@@ -926,6 +831,7 @@ namespace Mirle.Agv.Utmc.Controller
             return Vehicle.RobotStatus.IsHome && !Vehicle.IsCharging;
 
         }
+
         public void SetupMovingGuideMovingSections()
         {
             try
