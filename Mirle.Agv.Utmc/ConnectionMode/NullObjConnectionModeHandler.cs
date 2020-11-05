@@ -27,7 +27,7 @@ namespace Mirle.Agv.Utmc.ConnectionMode
 
         public void SetAutoState(EnumAutoState autoState)
         {
-            this.AutoState = autoState;
+            OnModeChangeEvent?.Invoke(this, autoState);          
         }
     }
 }

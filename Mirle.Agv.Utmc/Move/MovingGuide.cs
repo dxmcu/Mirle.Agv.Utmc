@@ -25,7 +25,6 @@ namespace Mirle.Agv.Utmc.Model
         public EnumMoveComplete MoveComplete { get; set; } = EnumMoveComplete.Fail;
         public bool IsAvoidMove { get; set; } = false;
         public bool IsAvoidComplete { get; set; } = false;
-
         public bool IsOverrideMove { get; set; } = false;
 
         public MovingGuide() { }

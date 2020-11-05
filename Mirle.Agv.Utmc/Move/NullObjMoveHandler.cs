@@ -29,7 +29,7 @@ namespace Mirle.Agv.Utmc.Move
         public NullObjMoveHandler(Model.MoveStatus moveStatus, MapInfo mapInfo)
         {
             this.MoveStatus = moveStatus;
-            this.MapInfo = mapInfo;            
+            this.MapInfo = mapInfo;
             moveStatus.LastMapPosition = MapInfo.addressMap.First().Value.Position;
             FakeMoveArrivalQueue = new ConcurrentQueue<PositionArgs>();
             IsFakeMoveEnginePause = false;
@@ -190,6 +190,6 @@ namespace Mirle.Agv.Utmc.Move
                 EnumLocalArrival = EnumLocalArrival.EndArrival,
                 MapPosition = MoveStatus.LastMapPosition
             });
-        }
+        }        
     }
 }

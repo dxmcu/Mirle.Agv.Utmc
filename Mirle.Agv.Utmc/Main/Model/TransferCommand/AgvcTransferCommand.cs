@@ -41,6 +41,8 @@ namespace Mirle.Agv.Utmc.Model
         public List<string> ToLoadSectionIds { get; set; } = new List<string>();
         public List<string> ToUnloadAddressIds { get; set; } = new List<string>();
         public List<string> ToUnloadSectionIds { get; set; } = new List<string>();
+        public bool IsCheckingAvoid { get; set; }
+        public bool IsCheckingOverride { get; set; }
 
         public AgvcTransferCommand()
         {
@@ -155,6 +157,6 @@ namespace Mirle.Agv.Utmc.Model
                 default:
                     return false;
             }
-        }
+        }        
     }
 }

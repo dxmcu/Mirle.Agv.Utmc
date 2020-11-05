@@ -29,7 +29,7 @@ namespace Mirle.Agv.Utmc.Move
         {
             try
             {
-                var address = Vehicle.Instance.Mapinfo.addressMap[addressId];
+                var address = Vehicle.Instance.MapInfo.addressMap[addressId];
                 var localData = LocalPackage.MainFlowHandler.localData;
                 OnUpdatePositionArgsEvent?.Invoke(sender, new PositionArgs()
                 {
@@ -122,7 +122,7 @@ namespace Mirle.Agv.Utmc.Move
             {
                 INX.Model.VehicleLocation nowVehicleLocation = localData.Location;
                 var addressId = nowVehicleLocation.LastAddress;
-                return Vehicle.Instance.Mapinfo.addressMap[addressId];
+                return Vehicle.Instance.MapInfo.addressMap[addressId];
             }
             catch (Exception ex)
             {
@@ -142,7 +142,7 @@ namespace Mirle.Agv.Utmc.Move
             {
                 INX.Model.VehicleLocation nowVehicleLocation = localData.Location;
                 var sectionId = nowVehicleLocation.NowSection;
-                var lastSection = Vehicle.Instance.Mapinfo.sectionMap[sectionId];
+                var lastSection = Vehicle.Instance.MapInfo.sectionMap[sectionId];
                 lastSection.VehicleDistanceSinceHead = localData.Location.DistanceFormSectionHead;
                 return lastSection;
             }
@@ -185,16 +185,6 @@ namespace Mirle.Agv.Utmc.Move
         {
             //TODO Set Initial Position for simulator
         }
-
-        //public void PartMoveBegin()
-        //{
-
-        //}
-
-        //public void PartMoveEnd(EnumSlotSelect openSlot = EnumSlotSelect.None)
-        //{
-
-        //}
 
         public void ReserveOkPartMove(MapSection mapSection)
         {

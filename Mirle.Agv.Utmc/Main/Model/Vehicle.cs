@@ -25,7 +25,7 @@ namespace Mirle.Agv.Utmc.Model
         public bool IsAgvcConnect { get; set; } = false;
         public EnumLoginLevel LoginLevel { get; set; } = EnumLoginLevel.Op;
         public EnumChargingStage ChargingStage { get; set; } = EnumChargingStage.Idle;
-        public MapInfo Mapinfo { get; private set; } = new MapInfo();
+        public MapInfo MapInfo { get; private set; } = new MapInfo();
         public string AskReserveQueueException { get; set; } = "NONE";
 
         #region AsePackage

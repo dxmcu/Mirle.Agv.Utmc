@@ -233,7 +233,7 @@ namespace Mirle.Agv.Utmc.View
                 // Draw Sections in blueLine
                 allUcSectionImages.Clear();
 
-                var sectionMap = Vehicle.Mapinfo.sectionMap.Values.ToList();
+                var sectionMap = Vehicle.MapInfo.sectionMap.Values.ToList();
                 foreach (var section in sectionMap)
                 {
                     var headPos = section.HeadAddress.Position;
@@ -271,7 +271,7 @@ namespace Mirle.Agv.Utmc.View
                 //Draw Addresses in BlackRectangle(Segment) RedCircle(Port) RedTriangle(Charger)
                 allUcAddressImages.Clear();
 
-                var addressMap = Vehicle.Mapinfo.addressMap.Values.ToList();
+                var addressMap = Vehicle.MapInfo.addressMap.Values.ToList();
                 foreach (var address in addressMap)
                 {
                     UcAddressImage ucAddressImage = new UcAddressImage(GetUcAddress(address));
@@ -342,20 +342,20 @@ namespace Mirle.Agv.Utmc.View
         {
             #region 200318 dabid+ 
             //MapPosition tmpO = new MapPosition();
-            var tmp = Vehicle.Mapinfo.addressMap.Values.FirstOrDefault();
+            var tmp = Vehicle.MapInfo.addressMap.Values.FirstOrDefault();
             tmpO = tmp.Position;
             MapPosition tmpMaxY = new MapPosition();
             MapPosition tmpMinY = new MapPosition();
-            foreach (var addr in Vehicle.Mapinfo.addressMap.Values)
+            foreach (var addr in Vehicle.MapInfo.addressMap.Values)
             {
                 if (addr.Position.X * addr.Position.X + addr.Position.Y * addr.Position.Y < tmpO.X * tmpO.X + tmpO.Y * tmpO.Y)
                 {
                     tmpO = addr.Position;
                 }
             }
-            tmp = Vehicle.Mapinfo.addressMap.Values.FirstOrDefault();
+            tmp = Vehicle.MapInfo.addressMap.Values.FirstOrDefault();
             tmpMaxY.Y = tmpMinY.Y = tmp.Position.Y;
-            foreach (var address in Vehicle.Mapinfo.addressMap.Values)
+            foreach (var address in Vehicle.MapInfo.addressMap.Values)
             {
                 if (Math.Abs(address.Position.Y - tmpO.Y) > Math.Abs(tmpMaxY.Y - tmpO.Y))
                 {
@@ -369,10 +369,10 @@ namespace Mirle.Agv.Utmc.View
             mapYOffset = (Int32)Math.Abs(tmpMaxY.Y - tmpMinY.Y);
             #endregion
 
-            double xMax = Vehicle.Mapinfo.addressMap.Values.ToList().Max(addr => addr.Position.X);
-            double xMin = Vehicle.Mapinfo.addressMap.Values.ToList().Min(addr => addr.Position.X);
-            double yMax = Vehicle.Mapinfo.addressMap.Values.ToList().Max(addr => addr.Position.Y);
-            double yMin = Vehicle.Mapinfo.addressMap.Values.ToList().Min(addr => addr.Position.Y);
+            double xMax = Vehicle.MapInfo.addressMap.Values.ToList().Max(addr => addr.Position.X);
+            double xMin = Vehicle.MapInfo.addressMap.Values.ToList().Min(addr => addr.Position.X);
+            double yMax = Vehicle.MapInfo.addressMap.Values.ToList().Max(addr => addr.Position.Y);
+            double yMin = Vehicle.MapInfo.addressMap.Values.ToList().Min(addr => addr.Position.Y);
             maxPos.X = xMax;//200318 dabid+
             maxPos.Y = yMax;//200318 dabid+
             minPos.X = xMin;//200318 dabid+
@@ -1447,15 +1447,15 @@ namespace Mirle.Agv.Utmc.View
         private void txtDisableChargerAddressId_TextChanged(object sender, EventArgs e)
         {
             var addressId = txtDisableChargerAddressId.Text.Trim();
-            checkEnableToCharge.Checked = Vehicle.Mapinfo.addressMap.ContainsKey(addressId) && Vehicle.Mapinfo.addressMap[addressId].IsCharger();
+            checkEnableToCharge.Checked = Vehicle.MapInfo.addressMap.ContainsKey(addressId) && Vehicle.MapInfo.addressMap[addressId].IsCharger();
         }
 
         private void checkEnableToCharge_CheckedChanged(object sender, EventArgs e)
         {
             var addressId = txtDisableChargerAddressId.Text.Trim();
-            if (Vehicle.Mapinfo.addressMap.ContainsKey(addressId))
+            if (Vehicle.MapInfo.addressMap.ContainsKey(addressId))
             {
-                Vehicle.Mapinfo.addressMap[addressId].ChargeDirection = checkEnableToCharge.Checked ? EnumAddressDirection.Right : EnumAddressDirection.None;
+                Vehicle.MapInfo.addressMap[addressId].ChargeDirection = checkEnableToCharge.Checked ? EnumAddressDirection.Right : EnumAddressDirection.None;
             }
         }
 

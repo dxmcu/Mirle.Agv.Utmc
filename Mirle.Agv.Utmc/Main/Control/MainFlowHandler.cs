@@ -187,8 +187,10 @@ namespace Mirle.Agv.Utmc.Controller
                 {
                     RobotHandler = new Robot.NullObjRobotHandler(Vehicle.RobotStatus, Vehicle.CarrierSlotStatus);
                     BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
-                    MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.Mapinfo);
+                    MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.MapInfo);
                     ConnectionModeHandler = new ConnectionMode.NullObjConnectionModeHandler(Vehicle.AutoState);
+
+                    Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs = 60 * 1000;
                 }
                 else
                 {
@@ -363,23 +365,7 @@ namespace Mirle.Agv.Utmc.Controller
                         case EnumTransferStep.AvoidMoveComplete:
                             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[避車.到站.回報.完成] AvoidMoveComplete.");
                             AvoidMoveComplete();
-                            break;
-                        //case EnumTransferStep.MoveToAddressWaitArrival:
-                        //    if (Vehicle.MoveStatus.IsMoveEnd)
-                        //    {
-                        //        MoveToAddressEnd();
-                        //    }
-                        //    else if (Vehicle.MoveStatus.LastAddress.Id == Vehicle.MovingGuide.ToAddressId)
-                        //    {
-                        //        MoveToAddressArrival();
-                        //    }
-                        //    break;
-                        case EnumTransferStep.WaitMoveArrivalVitualPortReply:
-                            //if (Vehicle.TransferCommand.IsVitualPortUnloadArrivalReply)
-                            //{
-                            //    DealVitualPortUnloadArrivalReply();
-                            //}
-                            break;
+                            break;                      
                         case EnumTransferStep.MoveToAddressWaitEnd:
                             if (Vehicle.MoveStatus.IsMoveEnd)
                             {
@@ -492,12 +478,10 @@ namespace Mirle.Agv.Utmc.Controller
 
                 if (endAddressId == Vehicle.MoveStatus.LastAddress.Id)
                 {
-                    if (Vehicle.MoveStatus.IsMoveEnd)
-                    {
-                        LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[原地到站] Same address end.");
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[原地到站] Same address end.");
 
-                        Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Success;
-                    }
+                    Vehicle.MovingGuide.MoveComplete = EnumMoveComplete.Success;
+                    Vehicle.MoveStatus.IsMoveEnd = true;
                 }
                 else
                 {
@@ -715,106 +699,6 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void AgvcConnector_OnOverrideCommandEvent(object sender, AgvcTransferCommand transferCommand)
-        {
-            try
-            {
-                var msg = $"MainFlow :  Get [ Override ]Command[{transferCommand.CommandId}],  start check .";
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
-        private void AgvcConnector_OnAvoideRequestEvent(object sender, MovingGuide aseMovingGuide)
-        {
-            #region 避車檢查
-            try
-            {
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow :  Get Avoid Command, End Adr=[{aseMovingGuide.ToAddressId}],  start check .");
-
-                agvcConnector.PauseAskReserve();
-
-                if (Vehicle.mapTransferCommands.IsEmpty)
-                {
-                    throw new Exception("Vehicle has no Command, can not Avoid");
-                }
-
-                if (!IsMoveStep())
-                {
-                    throw new Exception("Vehicle is not moving, can not Avoid");
-                }
-
-                if (!IsMoveStopByNoReserve() && !Vehicle.MovingGuide.IsAvoidComplete)
-                {
-                    throw new Exception($"Vehicle is not stop by no reserve, can not Avoid");
-                }
-
-                //if (!IsAvoidCommandMatchTheMap(agvcMoveCmd))
-                //{
-                //    var reason = "避車路徑中 Port Adr 與路段不合圖資";
-                //    RejectAvoidCommandAndResume(000018, reason, agvcMoveCmd);
-                //    return;
-                //}
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-                RejectAvoidCommandAndResume(000036, ex.Message, aseMovingGuide);
-            }
-            #endregion
-
-            #region 避車Command生成
-            try
-            {
-                IsAvoidMove = true;
-                agvcConnector.ClearAllReserve();
-                Vehicle.MovingGuide = aseMovingGuide;
-                SetupMovingGuideMovingSections();
-                agvcConnector.SetupNeedReserveSections();
-                agvcConnector.StatusChangeReport();
-                agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 0, "");
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow : Get 避車Command checked , 終點[{aseMovingGuide.ToAddressId}].");
-                agvcConnector.ResumeAskReserve();
-            }
-            catch (Exception ex)
-            {
-                StopClearAndReset();
-                var reason = "避車Exception";
-                RejectAvoidCommandAndResume(000036, reason, aseMovingGuide);
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-
-            #endregion
-        }
-
-        public bool IsMoveStep()
-        {
-            return Vehicle.TransferCommand.TransferStep == EnumTransferStep.MoveToAddressWaitEnd;
-        }
-
-        private bool IsMoveStopByNoReserve()
-        {
-            return Vehicle.MovingGuide.ReserveStop == VhStopSingle.StopSingleOn;
-        }
-
-        private void RejectAvoidCommandAndResume(int alarmCode, string reason, MovingGuide aseMovingGuide)
-        {
-            try
-            {
-                SetAlarmFromAgvm(alarmCode);
-                agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 1, reason);
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, string.Concat($"MainFlow : Reject Avoid Command, ", reason));
-                agvcConnector.ResumeAskReserve();
-            }
-            catch (Exception ex)
-            {
-                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
-            }
-        }
-
         public bool CanVehMove()
         {
             try
@@ -845,16 +729,16 @@ namespace Mirle.Agv.Utmc.Controller
                     MapSection mapSection = new MapSection();
                     string sectionId = movingGuide.GuideSectionIds[i].Trim();
                     string addressId = movingGuide.GuideAddressIds[i + 1].Trim();
-                    if (!Vehicle.Mapinfo.sectionMap.ContainsKey(sectionId))
+                    if (!Vehicle.MapInfo.sectionMap.ContainsKey(sectionId))
                     {
                         throw new Exception($"Map info has no this section ID.[{sectionId}]");
                     }
-                    else if (!Vehicle.Mapinfo.addressMap.ContainsKey(addressId))
+                    else if (!Vehicle.MapInfo.addressMap.ContainsKey(addressId))
                     {
                         throw new Exception($"Map info has no this address ID.[{addressId}]");
                     }
 
-                    mapSection = Vehicle.Mapinfo.sectionMap[sectionId];
+                    mapSection = Vehicle.MapInfo.sectionMap[sectionId];
                     mapSection.CmdDirection = addressId == mapSection.TailAddress.Id ? EnumCommandDirection.Forward : EnumCommandDirection.Backward;
                     movingGuide.MovingSections.Add(mapSection);
                 }
@@ -883,7 +767,7 @@ namespace Mirle.Agv.Utmc.Controller
             try
             {
                 int sectionIndex = Vehicle.MovingGuide.GuideSectionIds.FindIndex(x => x == mapSection.Id);
-                MapAddress address = Vehicle.Mapinfo.addressMap[Vehicle.MovingGuide.GuideAddressIds[sectionIndex + 1]];
+                MapAddress address = Vehicle.MapInfo.addressMap[Vehicle.MovingGuide.GuideAddressIds[sectionIndex + 1]];
 
                 MoveHandler.ReserveOkPartMove(mapSection);
 
@@ -918,18 +802,18 @@ namespace Mirle.Agv.Utmc.Controller
                 {
                     if (positionArgs.EnumLocalArrival == EnumLocalArrival.EndArrival)
                     {
-                        moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap[movingGuide.ToAddressId];
+                        moveStatus.NearlyAddress = Vehicle.MapInfo.addressMap[movingGuide.ToAddressId];
                         moveStatus.NearlySection = movingGuide.MovingSections.Last();
                     }
                     else
                     {
                         moveStatus.NearlyAddress = (from addressId in movingGuide.GuideAddressIds
-                                                    select Vehicle.Mapinfo.addressMap[addressId]).ToList()
+                                                    select Vehicle.MapInfo.addressMap[addressId]).ToList()
                                                     .OrderBy(address => address.MyDistance(positionArgs.MapPosition)).ToArray()
                                                     .First();
 
                         moveStatus.NearlySection = (from sectionId in movingGuide.GuideSectionIds
-                                                    select Vehicle.Mapinfo.sectionMap[sectionId]).ToList()
+                                                    select Vehicle.MapInfo.sectionMap[sectionId]).ToList()
                                                     .FirstOrDefault(section => section.InSection(moveStatus.NearlyAddress));
 
                     }
@@ -954,11 +838,11 @@ namespace Mirle.Agv.Utmc.Controller
                 }
                 else
                 {
-                    moveStatus.NearlyAddress = Vehicle.Mapinfo.addressMap.Values.ToList()
+                    moveStatus.NearlyAddress = Vehicle.MapInfo.addressMap.Values.ToList()
                                                .OrderBy(address => address.MyDistance(positionArgs.MapPosition)).ToArray()
                                                .First();
 
-                    moveStatus.NearlySection = Vehicle.Mapinfo.sectionMap.Values.ToList()
+                    moveStatus.NearlySection = Vehicle.MapInfo.sectionMap.Values.ToList()
                                                .FirstOrDefault(section => section.InSection(moveStatus.NearlyAddress));
 
                     moveStatus.NearlySection.VehicleDistanceSinceHead = moveStatus.NearlySection.HeadAddress.MyDistance(positionArgs.MapPosition);
@@ -1430,7 +1314,7 @@ namespace Mirle.Agv.Utmc.Controller
 
                 if (Vehicle.mapTransferCommands.Count > 1)
                 {
-                    bool isEqLoad = string.IsNullOrEmpty(Vehicle.Mapinfo.addressMap[Vehicle.TransferCommand.LoadAddressId].AgvStationId);
+                    bool isEqLoad = string.IsNullOrEmpty(Vehicle.MapInfo.addressMap[Vehicle.TransferCommand.LoadAddressId].AgvStationId);
 
                     var minDis = DistanceFromLastPosition(Vehicle.TransferCommand.UnloadAddressId);
 
@@ -1450,7 +1334,7 @@ namespace Mirle.Agv.Utmc.Controller
                             targetAddressId = transferCommand.UnloadAddressId;
                         }
 
-                        bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.Mapinfo.addressMap[targetAddressId].AgvStationId);
+                        bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.MapInfo.addressMap[targetAddressId].AgvStationId);
 
                         if (isTransferCommandToEq == isEqLoad)
                         {
@@ -1494,7 +1378,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 targetAddressId = transferCommand.UnloadAddressId;
                             }
 
-                            bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.Mapinfo.addressMap[targetAddressId].AgvStationId);
+                            bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.MapInfo.addressMap[targetAddressId].AgvStationId);
 
                             if (targetAddressId == Vehicle.MoveStatus.LastAddress.Id)
                             {
@@ -1527,7 +1411,7 @@ namespace Mirle.Agv.Utmc.Controller
         private int DistanceFromLastPosition(string addressId)
         {
             var lastPosition = Vehicle.MoveStatus.LastMapPosition;
-            var addressPosition = Vehicle.Mapinfo.addressMap[addressId].Position;
+            var addressPosition = Vehicle.MapInfo.addressMap[addressId].Position;
             return (int)mapHandler.GetDistance(lastPosition, addressPosition);
         }
 
@@ -1849,15 +1733,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[發呆.結束.選擇.命令] Idle Pick Command To Do.");
 
-                if (Vehicle.mapTransferCommands.Count == 1)
-                {
-                    Vehicle.TransferCommand = Vehicle.mapTransferCommands.Values.ToArray()[0];
-                }
-                else
-                {
-                    //Vehicle.TransferCommand = PickACommand();
-                    Vehicle.TransferCommand = Vehicle.mapTransferCommands.Values.ToArray()[0];
-                }
+                Vehicle.TransferCommand = Vehicle.mapTransferCommands.Values.ToArray()[0];
             }
         }
 
@@ -1875,7 +1751,6 @@ namespace Mirle.Agv.Utmc.Controller
                 }
                 Vehicle.mapTransferCommands.TryRemove(Vehicle.TransferCommand.CommandId, out AgvcTransferCommand transferCommand);
                 agvcConnector.TransferComplete(transferCommand);
-                //asePackage.SetTransferCommandInfoRequest(transferCommand, EnumCommandInfoStep.End);
 
                 TransferCompleteOptimize();
 
@@ -1947,7 +1822,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 transferCommand.TransferStep = EnumTransferStep.MoveToUnload;
                                 targetAddressId = transferCommand.UnloadAddressId;
                             }
-                            bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.Mapinfo.addressMap[targetAddressId].AgvStationId); ;
+                            bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.MapInfo.addressMap[targetAddressId].AgvStationId); ;
 
                             if (isTransferCommandToEq == isEqEnd)
                             {
@@ -1988,7 +1863,7 @@ namespace Mirle.Agv.Utmc.Controller
                                     transferCommand.TransferStep = EnumTransferStep.MoveToUnload;
                                     targetAddressId = transferCommand.UnloadAddressId;
                                 }
-                                bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.Mapinfo.addressMap[targetAddressId].AgvStationId);
+                                bool isTransferCommandToEq = string.IsNullOrEmpty(Vehicle.MapInfo.addressMap[targetAddressId].AgvStationId);
 
                                 if (targetAddressId == Vehicle.MoveStatus.LastAddress.Id)
                                 {
@@ -2093,25 +1968,27 @@ namespace Mirle.Agv.Utmc.Controller
                         case EnumAgvcTransCommandType.MoveToCharger:
                             CheckVehicleTransferCommandMapEmpty();
                             CheckMoveEndAddress(transferCommand.UnloadAddressId);
+                            CheckPathToEnd(transferCommand.ToUnloadSectionIds, transferCommand.ToUnloadAddressIds, transferCommand.UnloadAddressId);
                             break;
                         case EnumAgvcTransCommandType.Load:
                             CheckRobotPortAddress(transferCommand.LoadAddressId, transferCommand.LoadPortId);
                             CheckCstIdDuplicate(transferCommand.CassetteId);
                             CheckVehicleTransferCommandMapEmpty();
+                            CheckPathToEnd(transferCommand.ToLoadSectionIds, transferCommand.ToLoadAddressIds, transferCommand.LoadAddressId);
                             break;
                         case EnumAgvcTransCommandType.Unload:
                             CheckRobotPortAddress(transferCommand.UnloadAddressId, transferCommand.UnloadPortId);
                             transferCommand.SlotNumber = CheckUnloadCstId(transferCommand.CassetteId);
                             CheckVehicleTransferCommandMapEmpty();
+                            CheckPathToEnd(transferCommand.ToUnloadSectionIds, transferCommand.ToUnloadAddressIds, transferCommand.UnloadAddressId);
                             break;
                         case EnumAgvcTransCommandType.LoadUnload:
                             CheckRobotPortAddress(transferCommand.LoadAddressId, transferCommand.LoadPortId);
                             CheckRobotPortAddress(transferCommand.UnloadAddressId, transferCommand.UnloadPortId);
                             CheckCstIdDuplicate(transferCommand.CassetteId);
                             CheckVehicleTransferCommandMapEmpty();
-                            break;
-                        case EnumAgvcTransCommandType.Override:
-                            CheckOverrideAddress(transferCommand);
+                            CheckPathToEnd(transferCommand.ToLoadSectionIds, transferCommand.ToLoadAddressIds, transferCommand.LoadAddressId);
+                            CheckPathToEnd(transferCommand.ToUnloadSectionIds, transferCommand.ToUnloadAddressIds, transferCommand.UnloadAddressId);
                             break;
                         case EnumAgvcTransCommandType.Else:
                             break;
@@ -2137,7 +2014,6 @@ namespace Mirle.Agv.Utmc.Controller
                     var isMapTransferCommandsEmpty = Vehicle.mapTransferCommands.IsEmpty;
                     Vehicle.mapTransferCommands.TryAdd(transferCommand.CommandId, transferCommand);
                     agvcConnector.ReplyTransferCommand(transferCommand.CommandId, transferCommand.GetCommandActionType(), transferCommand.SeqNum, (int)EnumAgvcReplyCode.Accept, "");
-                    //asePackage.SetTransferCommandInfoRequest(transferCommand, EnumCommandInfoStep.Begin);
                     if (isMapTransferCommandsEmpty) agvcConnector.Commanding();
                     LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[初始化搬送命令 成功] Initial Transfer Command Ok. [{transferCommand.CommandId}]");
                 }
@@ -2241,15 +2117,15 @@ namespace Mirle.Agv.Utmc.Controller
         private void CheckRobotPortAddress(string portAddressId, string portId)
         {
             CheckMoveEndAddress(portAddressId);
-            MapAddress portAddress = Vehicle.Mapinfo.addressMap[portAddressId];
+            MapAddress portAddress = Vehicle.MapInfo.addressMap[portAddressId];
             if (!portAddress.IsTransferPort())
             {
                 throw new Exception($"{portAddressId} can not unload.");
             }
 
-            if (Vehicle.Mapinfo.portMap.ContainsKey(portId))
+            if (Vehicle.MapInfo.portMap.ContainsKey(portId))
             {
-                var port = Vehicle.Mapinfo.portMap[portId];
+                var port = Vehicle.MapInfo.portMap[portId];
                 if (port.ReferenceAddressId != portAddressId)
                 {
                     throw new Exception($"{portAddressId} unmatch {portId}.");
@@ -2259,11 +2135,307 @@ namespace Mirle.Agv.Utmc.Controller
 
         private void CheckMoveEndAddress(string unloadAddressId)
         {
-            if (!Vehicle.Mapinfo.addressMap.ContainsKey(unloadAddressId))
+            if (!Vehicle.MapInfo.addressMap.ContainsKey(unloadAddressId))
             {
                 throw new Exception($"{unloadAddressId} is not in the map.");
             }
         }
+
+        private void AgvcConnector_OnOverrideCommandEvent(object sender, AgvcTransferCommand transferCommand)
+        {
+            try
+            {
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[檢查替代命令] Check Override Transfer Command [{transferCommand.CommandId}]");
+
+                #region 替代路徑檢查
+                try
+                {
+                    if (Vehicle.TransferCommand.IsCheckingAvoid)
+                    {
+                        throw new Exception($"Vehicle is checking avoid request, cant not override.");
+                    }
+                    else
+                    {
+                        Vehicle.TransferCommand.IsCheckingOverride = true;
+                    }
+
+                    if (Vehicle.TransferCommand.TransferStep == EnumTransferStep.Idle)
+                    {
+                        throw new Exception($"Vehicle is idle, cant not override.");
+                    }
+
+                    if (Vehicle.TransferCommand.TransferStep != EnumTransferStep.MoveToAddressWaitEnd && Vehicle.TransferCommand.TransferStep != EnumTransferStep.WaitOverrideToContinue)
+                    {
+                        throw new Exception("Vehicle is not in moving step or waiting for override, cant not override.");
+                    }
+
+                    if (!(Vehicle.MovingGuide.ReserveStop == VhStopSingle.StopSingleOn || Vehicle.MovingGuide.IsAvoidComplete))
+                    {
+                        throw new Exception($"Vehicle is not in reserve-stop, cant not override.");
+                    }
+
+                    if (Vehicle.TransferCommand.EnrouteState == CommandState.LoadEnroute)
+                    {
+                        CheckPathToEnd(transferCommand.ToLoadSectionIds, transferCommand.ToLoadAddressIds, transferCommand.LoadAddressId);
+
+                        if (Vehicle.TransferCommand.LoadAddressId != transferCommand.LoadAddressId)
+                        {
+                            throw new Exception($"Load address id check fail, cant not override.");
+                        }
+
+                        if (Vehicle.TransferCommand.AgvcTransCommandType == EnumAgvcTransCommandType.LoadUnload)
+                        {
+                            CheckPathToEnd(transferCommand.ToUnloadSectionIds, transferCommand.ToUnloadAddressIds, transferCommand.UnloadAddressId);
+
+                            if (Vehicle.TransferCommand.UnloadAddressId != transferCommand.UnloadAddressId)
+                            {
+                                throw new Exception($"Unload address id check fail, cant not override.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        CheckLoadInfoIsEmpty(transferCommand);
+
+                        CheckPathToEnd(transferCommand.ToUnloadSectionIds, transferCommand.ToUnloadAddressIds, transferCommand.UnloadAddressId);
+
+                        if (Vehicle.TransferCommand.UnloadAddressId != transferCommand.UnloadAddressId)
+                        {
+                            throw new Exception($"Unload address id check fail, cant not override.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    agvcConnector.ReplyTransferCommand(transferCommand.CommandId, transferCommand.GetCommandActionType(), transferCommand.SeqNum, (int)EnumAgvcReplyCode.Reject, ex.Message);
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+                    Vehicle.TransferCommand.IsCheckingOverride = false;
+                    return;
+                }
+                #endregion
+
+                #region 替代路徑生成
+                try
+                {
+                    PauseVisitTransferSteps();
+                    agvcConnector.ClearAllReserve();
+                    IsNotAvoid();
+                    OverrideTransferCommand(transferCommand);
+                    agvcConnector.ReplyTransferCommand(transferCommand.CommandId, transferCommand.GetCommandActionType(), transferCommand.SeqNum, (int)EnumAgvcReplyCode.Accept, "");
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Accept override transfer command, id = [{transferCommand.CommandId}].");
+                    ResumeVisitTransferSteps();
+                }
+                catch (Exception ex)
+                {
+                    StopClearAndReset();
+                    agvcConnector.ReplyTransferCommand(transferCommand.CommandId, transferCommand.GetCommandActionType(), transferCommand.SeqNum, (int)EnumAgvcReplyCode.Reject, ex.Message);
+                    LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"Override initial fail. reason = {ex.Message}");
+                }
+
+                Vehicle.TransferCommand.IsCheckingOverride = false;
+
+
+                #endregion
+
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
+        private void IsNotAvoid()
+        {
+            Vehicle.MovingGuide.IsAvoidMove = false;
+            Vehicle.MovingGuide.IsAvoidComplete = false;
+        }
+
+        private void OverrideTransferCommand(AgvcTransferCommand transferCommand)
+        {
+            switch (Vehicle.TransferCommand.EnrouteState)
+            {
+                case CommandState.LoadEnroute:
+                    Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToLoad;
+                    OverrideTransferCommandToLoad(transferCommand);
+                    if (Vehicle.TransferCommand.AgvcTransCommandType == EnumAgvcTransCommandType.LoadUnload)
+                    {
+                        OverrideTransferCommandToUnload(transferCommand);
+                    }
+                    break;
+                case CommandState.UnloadEnroute:
+                    Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToUnload;
+                    OverrideTransferCommandToUnload(transferCommand);
+                    break;
+                case CommandState.None:
+                    Vehicle.TransferCommand.TransferStep = EnumTransferStep.MoveToAddress;
+                    OverrideTransferCommandToUnload(transferCommand);
+                    break;
+            }
+        }
+
+        private void OverrideTransferCommandToUnload(AgvcTransferCommand transferCommand)
+        {
+            Vehicle.TransferCommand.ToUnloadSectionIds = transferCommand.ToUnloadSectionIds;
+            Vehicle.TransferCommand.ToUnloadAddressIds = transferCommand.ToUnloadAddressIds;
+        }
+
+        private void OverrideTransferCommandToLoad(AgvcTransferCommand transferCommand)
+        {
+            Vehicle.TransferCommand.ToLoadSectionIds = transferCommand.ToLoadSectionIds;
+            Vehicle.TransferCommand.ToLoadAddressIds = transferCommand.ToLoadAddressIds;
+        }
+
+        private void CheckLoadInfoIsEmpty(AgvcTransferCommand transferCommand)
+        {
+            if (transferCommand.ToLoadSectionIds.Any())
+            {
+                throw new Exception($"Load section list is not empty.");
+            }
+
+            if (transferCommand.ToLoadAddressIds.Any())
+            {
+                throw new Exception($"Load address list is not empty.");
+            }
+
+            if (!string.IsNullOrEmpty(transferCommand.LoadAddressId))
+            {
+                throw new Exception($"Load port address is not empty.");
+            }
+        }
+
+        private void CheckPathToEnd(List<string> sectionIds, List<string> addressIds, string endAddressId)
+        {
+            if (sectionIds.Count == 0)
+            {
+                throw new Exception($"Section list is empty.");
+            }
+
+            if (addressIds.Count == 0)
+            {
+                throw new Exception($"Address list is empty.");
+            }
+
+            for (int i = 0; i < sectionIds.Count; i++)
+            {
+                if (!Vehicle.MapInfo.sectionMap.ContainsKey(sectionIds[i]))
+                {
+                    throw new Exception($"{sectionIds[i]} is not in the map.");
+                }
+
+                if (!Vehicle.MapInfo.addressMap.ContainsKey(addressIds[i]))
+                {
+                    throw new Exception($"{addressIds[i]} is not in the map.");
+                }
+
+                MapSection mapSection = Vehicle.MapInfo.sectionMap[sectionIds[i]];
+                if (!mapSection.InSection(addressIds[i]))
+                {
+                    throw new Exception($"{addressIds[i]} is not in {sectionIds[i]}.");
+                }
+            }
+
+            if (!Vehicle.MapInfo.addressMap.ContainsKey(endAddressId))
+            {
+                throw new Exception($"{endAddressId} is not in the map.");
+            }
+
+            MapSection endSection = Vehicle.MapInfo.sectionMap[sectionIds[sectionIds.Count - 1]];
+            if (!endSection.InSection(endAddressId))
+            {
+                throw new Exception($"{endAddressId} is not in {endSection.Id}.");
+            }
+        }
+
+        private void AgvcConnector_OnAvoideRequestEvent(object sender, MovingGuide aseMovingGuide)
+        {
+            #region 避車檢查
+            try
+            {
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow :  Get Avoid Command, End Adr=[{aseMovingGuide.ToAddressId}],  start check .");
+
+                agvcConnector.PauseAskReserve();
+
+                if (Vehicle.TransferCommand.IsCheckingOverride)
+                {
+                    throw new Exception($"Vehicle is checking avoid request, cant not override.");
+                }
+                else
+                {
+                    Vehicle.TransferCommand.IsCheckingAvoid = true;
+                }
+
+                if (Vehicle.mapTransferCommands.IsEmpty)
+                {
+                    throw new Exception("Vehicle has no Command, can not Avoid");
+                }
+
+                if (!IsMoveStep() || Vehicle.TransferCommand.TransferStep == EnumTransferStep.WaitOverrideToContinue)
+                {
+                    throw new Exception("Vehicle is not moving, can not Avoid");
+                }
+
+                if (!IsMoveStopByNoReserve() && !Vehicle.MovingGuide.IsAvoidComplete)
+                {
+                    throw new Exception($"Vehicle is not stop by no reserve, can not Avoid");
+                }
+
+                CheckPathToEnd(aseMovingGuide.GuideSectionIds, aseMovingGuide.GuideAddressIds, aseMovingGuide.ToAddressId);
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+                RejectAvoidCommandAndResume(000036, ex.Message, aseMovingGuide);
+            }
+            #endregion
+
+            #region 避車Command生成
+            try
+            {
+                Vehicle.MovingGuide.IsAvoidMove = true;
+                agvcConnector.ClearAllReserve();
+                Vehicle.MovingGuide = aseMovingGuide;
+                SetupMovingGuideMovingSections();
+                agvcConnector.SetupNeedReserveSections();
+                agvcConnector.StatusChangeReport();
+                agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 0, "");
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"MainFlow : Get 避車Command checked , 終點[{aseMovingGuide.ToAddressId}].");
+                agvcConnector.ResumeAskReserve();
+            }
+            catch (Exception ex)
+            {
+                StopClearAndReset();
+                RejectAvoidCommandAndResume(000036, "避車Exception", aseMovingGuide);
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+
+            #endregion
+        }
+
+        public bool IsMoveStep()
+        {
+            return Vehicle.TransferCommand.TransferStep == EnumTransferStep.MoveToAddressWaitEnd;
+        }
+
+        private bool IsMoveStopByNoReserve()
+        {
+            return Vehicle.MovingGuide.ReserveStop == VhStopSingle.StopSingleOn;
+        }
+
+        private void RejectAvoidCommandAndResume(int alarmCode, string reason, MovingGuide aseMovingGuide)
+        {
+            try
+            {
+                SetAlarmFromAgvm(alarmCode);
+                agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 1, reason);
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, string.Concat($"MainFlow : Reject Avoid Command, ", reason));
+                agvcConnector.ResumeAskReserve();
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+            }
+        }
+
 
         #endregion
 
@@ -2788,7 +2960,6 @@ namespace Mirle.Agv.Utmc.Controller
 
                     Vehicle.mapTransferCommands.TryRemove(Vehicle.TransferCommand.CommandId, out AgvcTransferCommand transferCommand);
                     agvcConnector.TransferComplete(transferCommand);
-                    //asePackage.SetTransferCommandInfoRequest(transferCommand, EnumCommandInfoStep.End);
 
                     if (Vehicle.mapTransferCommands.IsEmpty)
                     {
