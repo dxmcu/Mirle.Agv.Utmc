@@ -188,7 +188,7 @@ namespace Mirle.Agv.Utmc.Move
 
         public void ReserveOkPartMove(MapSection mapSection)
         {
-            //TODO LocalPackage need provide method set reserve ok section
+            LocalPackage.MainFlowHandler.MoveControl.AddReserve(mapSection.Id);
         }
 
         public void SetMoveStatusFrom(MoveStatus moveStatus)
