@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 using System.IO;
 using Mirle.Agv.Utmc.Model;
 using Mirle.Agv.Utmc.Model.Configs;
-
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Diagnostics;
 using Mirle.Tools;
+using Mirle.Agv.Utmc.Tools;
 
 namespace Mirle.Agv.Utmc.Controller
 {
 
-    public class AlarmHandler
+    public class MainAlarmHandler
     {
         #region Containers
         public Dictionary<int, Alarm> allAlarms = new Dictionary<int, Alarm>();
@@ -29,7 +29,7 @@ namespace Mirle.Agv.Utmc.Controller
         public string AlarmLogMsg { get; set; } = "";
         public string AlarmHistoryLogMsg { get; set; } = "";
 
-        public AlarmHandler()
+        public MainAlarmHandler()
         {
             LoadAlarmFile();
         }
@@ -40,9 +40,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 if (string.IsNullOrEmpty(Vehicle.AlarmConfig.AlarmFileName))
                 {
-                    mirleLogger.Log(new LogFormat("Error", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID"
-                        , $"string.IsNullOrEmpty(alarmConfig.AlarmFileName)={string.IsNullOrEmpty(Vehicle.AlarmConfig.AlarmFileName)}"));
-                    return;
+                    throw new Exception($"string.IsNullOrEmpty(alarmConfig.AlarmFileName)={string.IsNullOrEmpty(Vehicle.AlarmConfig.AlarmFileName)}");
                 }
 
                 string alarmFullPath = Path.Combine(Environment.CurrentDirectory, Vehicle.AlarmConfig.AlarmFileName);
@@ -52,9 +50,7 @@ namespace Mirle.Agv.Utmc.Controller
                 string[] allRows = File.ReadAllLines(alarmFullPath);
                 if (allRows == null || allRows.Length < 2)
                 {
-                    mirleLogger.Log(new LogFormat("Error", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID"
-                        , "There are no alarms in file"));
-                    return;
+                    throw new Exception("There are no alarms in file");
                 }
 
                 string[] titleRow = allRows[0].Split(',');
@@ -88,12 +84,11 @@ namespace Mirle.Agv.Utmc.Controller
                     allAlarms.Add(oneRow.Id, oneRow);
                 }
 
-                mirleLogger.Log(new LogFormat("Debug", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID"
-                     , "Load Alarm File Ok"));
+                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Load Alarm File Ok");
             }
             catch (Exception ex)
             {
-                mirleLogger.Log(new LogFormat("Error", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID", ex.Message));
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
 
@@ -115,7 +110,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
             catch (Exception ex)
             {
-                mirleLogger.Log(new LogFormat("Error", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID", ex.Message));
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
 
@@ -161,7 +156,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 string msg = $"{alarm.Id},{alarm.AlarmText},{alarm.Level},{alarm.SetTime},{alarm.ResetTime},{alarm.Description}";
 
-                mirleLogger.LogString("AlarmHistory", msg);
+                mirleLogger.LogString("MainAlarmHistory", msg);
             }
             catch (Exception ex)
             {
@@ -175,7 +170,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 string timeStamp = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss.fff");
 
-                mirleLogger.LogString("AlarmHistory", msg);
+                mirleLogger.LogString("MainAlarmHistory", msg);
             }
             catch (Exception ex)
             {
@@ -185,13 +180,23 @@ namespace Mirle.Agv.Utmc.Controller
 
         public string GetAlarmText(int errorCode)
         {
-            if (allAlarms.ContainsKey(errorCode))
+            try
             {
-                var alarm = allAlarms[errorCode];
-                return $"[Id={errorCode}][Text={alarm.AlarmText}]";
+                return allAlarms[errorCode].GetJsonInfo();
+            }
+            catch (Exception ex)
+            {
+                LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
+                return $"[Id={errorCode}][Text=Unknow]";
             }
 
-            return $"[Id={errorCode}][Text=Unknow]";
+            //if (allAlarms.ContainsKey(errorCode))
+            //{
+            //    var alarm = allAlarms[errorCode];
+            //    return $"[Id={errorCode}][Text={alarm.AlarmText}]";
+            //}
+
+            //return $"[Id={errorCode}][Text=Unknow]";
         }
 
         public bool IsAlarm(int errorCode)
@@ -238,9 +243,14 @@ namespace Mirle.Agv.Utmc.Controller
             }
         }
 
-        private void LogException(string classMethodName, string exMsg)
+        private void LogException(string classMethodName, string msg)
         {
-            mirleLogger.Log(new LogFormat("Error", "5", classMethodName, "Device", "CarrierID", exMsg));
+            mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, "Device", "CarrierID", msg));
+        }
+
+        private void LogDebug(string classMethodName, string msg)
+        {
+            mirleLogger.Log(new LogFormat("MainDebug", "5", classMethodName, "Device", "CarrierID", msg));
         }
 
     }

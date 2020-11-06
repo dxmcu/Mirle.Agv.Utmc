@@ -63,7 +63,7 @@ namespace Mirle.Agv.Utmc.View
 
         private void LogException(string classMethodName, string exMsg)
         {
-            mirleLogger.Log(new LogFormat("Error", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
+            mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
         }
 
         private void btnHide_Click(object sender, EventArgs e)

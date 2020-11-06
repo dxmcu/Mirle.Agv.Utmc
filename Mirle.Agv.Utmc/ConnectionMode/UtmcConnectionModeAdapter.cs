@@ -10,7 +10,7 @@ namespace Mirle.Agv.Utmc.ConnectionMode
 {
     public class UtmcConnectionModeAdapter : ConnectionMode.IConnectionModeHandler
     {
-        public event EventHandler<EnumAutoState> OnModeChangeEvent;
+        public event EventHandler<Utmc.EnumAutoState> OnModeChangeEvent;
         public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
         public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
         public LocalPackage LocalPackage { get; set; }
@@ -18,7 +18,28 @@ namespace Mirle.Agv.Utmc.ConnectionMode
         public UtmcConnectionModeAdapter(LocalPackage localPackage)
         {
             this.LocalPackage = localPackage;
-            //TODO: LocalPackage publish ModeChangeEvent
+            LocalPackage.MainFlowHandler.OnModeChangeEvent += MainFlowHandler_OnModeChangeEvent;
+        }
+
+        private void MainFlowHandler_OnModeChangeEvent(object sender, Agv.EnumAutoState e)
+        {
+            Utmc.EnumAutoState autoState = GetAutoStateFromAgvAutoState(e);
+            OnModeChangeEvent?.Invoke(sender, autoState);
+        }
+
+        private EnumAutoState GetAutoStateFromAgvAutoState(Agv.EnumAutoState e)
+        {
+            switch (e)
+            {
+                case Agv.EnumAutoState.Auto:
+                    return EnumAutoState.Auto;
+                case Agv.EnumAutoState.Manual:
+                    return EnumAutoState.Manual;
+                case Agv.EnumAutoState.PreAuto:
+                    return EnumAutoState.None;
+                default:
+                    return EnumAutoState.None;
+            }
         }
 
         public void AgvcDisconnect()

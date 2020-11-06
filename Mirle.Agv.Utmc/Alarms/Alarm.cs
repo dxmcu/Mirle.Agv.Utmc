@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Model
 {
-
     public class Alarm
     {
         public int Id { get; set; }

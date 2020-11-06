@@ -143,6 +143,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Alarms\AgvcAlarmArgs.cs" />
+    <Compile Include="Alarms\IAlarmHandler.cs" />
+    <Compile Include="Alarms\NullObjAlarmHandler.cs" />
+    <Compile Include="Alarms\UtmcAlarmAdapter.cs" />
     <Compile Include="Battery\IBatteryHandler.cs" />
     <Compile Include="Battery\NullObjBatteryHandler.cs" />
     <Compile Include="Battery\UtmcBatteryAdapter.cs" />
@@ -380,10 +384,10 @@
     <Compile Include="Main\View\ConfigForm.Designer.cs">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Main\Control\AlarmHandler.cs" />
+    <Compile Include="Main\Control\MainAlarmHandler.cs" />
     <Compile Include="Main\Model\InitialEventArgs.cs" />
     <Compile Include="Main\Model\AgvcConnectionModel\Agvmessage.cs" />
-    <Compile Include="Main\Model\Alarm.cs" />
+    <Compile Include="Alarms\Alarm.cs" />
     <Compile Include="Main\MainDefines.cs" />
     <Compile Include="Main\Model\Configs\AlarmConfig.cs" />
     <Compile Include="Main\Model\Configs\MainFlowConfig.cs" />

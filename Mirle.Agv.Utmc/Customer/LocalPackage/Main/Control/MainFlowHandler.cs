@@ -35,6 +35,8 @@ namespace Mirle.Agv.INX.Controller
 
         public LocalData localData = LocalData.Instance;
 
+        public event EventHandler<EnumAutoState> OnModeChangeEvent;        
+
         private void MiidlerInfo()
         {
             /// 充電相關資訊.
@@ -183,7 +185,7 @@ namespace Mirle.Agv.INX.Controller
 
             InitialEvent();
 
-            OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs("MainFlow初始化成功", true, true));
+            OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs("MainFlow初始化成功") {  IsEnd = false, Scuess = true});
         }
 
         public void WriteLog(int logLevel, string carrierId, string message, [System.Runtime.CompilerServices.CallerMemberName] string memberName = "")
@@ -208,10 +210,11 @@ namespace Mirle.Agv.INX.Controller
                 XmlHandler xmlHandler = new XmlHandler();
 
                 xmlTarget = "MainFlow.xml";
+                
                 mainFlowConfig = xmlHandler.ReadXml<MainFlowConfig>(Path.Combine(localData.ConfigPath, "MainFlow.xml"));
 
                 localData.MainFlowConfig = mainFlowConfig;
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")) { Scuess = true});
                 localData.SimulateMode = mainFlowConfig.SimulateMode;
 
                 xmlTarget = "MapConfig.xml";
@@ -222,7 +225,7 @@ namespace Mirle.Agv.INX.Controller
                 try
                 {
                     localData.BatteryLogData = xmlHandler.ReadXml<BatteryLog>(Path.Combine(localData.ConfigPath, mainFlowConfig.BatteryLogPath));
-                    OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")));
+                    OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")) { Scuess = true });
                 }
                 catch
                 {
@@ -232,7 +235,7 @@ namespace Mirle.Agv.INX.Controller
                     try
                     {
                         localData.BatteryLogData = xmlHandler.ReadXml<BatteryLog>(Path.Combine(localData.ConfigPath, mainFlowConfig.BatteryBackupLogPath));
-                        OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")));
+                        OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat("讀取 ", xmlTarget, " 成功")) { Scuess = true });
                     }
                     catch
                     {
@@ -260,23 +263,23 @@ namespace Mirle.Agv.INX.Controller
 
                 xmlTarget = "MapHandler";
                 MapControl = new MapHandler(normalLogName);
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")) { Scuess = true });
 
                 xmlTarget = "AlarmHandler";
                 AlarmHandler = new AlarmHandler();
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")) { Scuess = true });
 
                 xmlTarget = "MIPCControlHandler";
                 MipcControl = new MIPCControlHandler(this, AlarmHandler);
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")) { Scuess = true });
 
                 xmlTarget = "MoveControlHandler";
                 MoveControl = new MoveControlHandler(MipcControl, AlarmHandler);
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")) { Scuess = true });
 
                 xmlTarget = "LoadUnloadControlHandler";
                 LoadUnloadControl = new LoadUnloadControlHandler(MipcControl, AlarmHandler);
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")));
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(String.Concat(xmlTarget, " 初始化成功")) { Scuess = true });
 
                 return true;
             }

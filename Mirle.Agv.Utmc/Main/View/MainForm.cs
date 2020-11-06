@@ -26,7 +26,6 @@ namespace Mirle.Agv.Utmc.View
         private AgvcConnector agvcConnector;
         private AgvcConnectorForm agvcConnectorForm;
         private AlarmForm alarmForm;
-        private AlarmHandler alarmHandler;
         private WarningForm warningForm;
         private ConfigForm configForm;
         private LoginForm loginForm;
@@ -67,7 +66,6 @@ namespace Mirle.Agv.Utmc.View
         {
             InitializeComponent();
             this.mainFlowHandler = mainFlowHandler;
-            alarmHandler = mainFlowHandler.alarmHandler;
             agvcConnector = mainFlowHandler.agvcConnector;
             mainForm = this;
         }
@@ -86,8 +84,10 @@ namespace Mirle.Agv.Utmc.View
             btnKeyInSoc.Visible = Vehicle.MainFlowConfig.IsSimulation;
             txtLastAlarm.Text = "";
             txtTransferCommands = new List<TextBox>() { txtTransferCommand01, txtTransferCommand02, txtTransferCommand03, txtTransferCommand04 };
-            var msg = "MainForm : 讀取主畫面";
-            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, msg);
+            LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "MainForm : 讀取主畫面");
+
+            //Mirle.Agv.INX.View.MainForm localMainForm = new INX.View.MainForm(mainFlowHandler.LocalPackage.MainFlowHandler);
+            //localMainForm.Show();
         }
 
         private void InitialDisableSlotCheckBox()
@@ -851,7 +851,7 @@ namespace Mirle.Agv.Utmc.View
         {
             try
             {
-                txtLastAlarm.Text = alarmHandler.LastAlarmMsg;
+                txtLastAlarm.Text = mainFlowHandler.AlarmHandler.GetLastAlarmMsg();
             }
             catch (Exception ex)
             {
@@ -1174,7 +1174,7 @@ namespace Mirle.Agv.Utmc.View
         private void btnAlarmReset_Click(object sender, EventArgs e)
         {
             btnAlarmReset.Enabled = false;
-            mainFlowHandler.ResetAllAlarmsFromAgvm();
+            mainFlowHandler.AlarmHandler.ResetAllAlarmsFromAgvm();
             Thread.Sleep(500);
             btnAlarmReset.Enabled = true;
         }
@@ -1352,12 +1352,12 @@ namespace Mirle.Agv.Utmc.View
 
         private void LogException(string classMethodName, string exMsg)
         {
-            mirleLogger.Log(new LogFormat("Error", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
+            mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
         }
 
         private void LogDebug(string classMethodName, string msg)
         {
-            mirleLogger.Log(new LogFormat("Debug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
+            mirleLogger.Log(new LogFormat("MainDebug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
         }
 
         private void checkBoxDisableSlot_CheckedChanged(object sender, EventArgs e)
@@ -1441,7 +1441,7 @@ namespace Mirle.Agv.Utmc.View
         private void btnKeyInTestAlarm_Click(object sender, EventArgs e)
         {
             int errorCode = decimal.ToInt32(numTestErrorCode.Value);
-            mainFlowHandler.SetAlarmFromAgvm(errorCode);
+            mainFlowHandler.AlarmHandler.SetAlarmFromAgvm(errorCode);
         }
 
         private void txtDisableChargerAddressId_TextChanged(object sender, EventArgs e)

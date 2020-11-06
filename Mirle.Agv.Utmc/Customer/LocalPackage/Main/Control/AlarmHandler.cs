@@ -35,6 +35,9 @@ namespace Mirle.Agv.INX.Controller
         public string AlarmHistory { get; set; } = "";
         private int alarmHistoryMaxLength = 10000;
 
+        public event EventHandler<Alarm> OnAlarmSetEvent;
+        public event EventHandler OnAlarmResetEvent;
+
         public AlarmHandler()
         {
             LoadAlarmFile();

@@ -567,7 +567,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Error", "5", classMethodName, "DeviceID", "CarrierID", exMsg));
+                mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, "DeviceID", "CarrierID", exMsg));
             }
             catch (Exception)
             {
@@ -578,7 +578,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Debug", "5", classMethodName, "DeviceID", "CarrierID", msg));
+                mirleLogger.Log(new LogFormat("MainDebug", "5", classMethodName, "DeviceID", "CarrierID", msg));
             }
             catch (Exception)
             {

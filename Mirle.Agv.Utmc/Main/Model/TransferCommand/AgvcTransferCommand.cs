@@ -135,7 +135,7 @@ namespace Mirle.Agv.Utmc.Model
 
         protected void LogException(string source, string exMsg)
         {
-            MirleLogger.Instance.Log(new LogFormat("Error", "5", source, "Device", "CarrierID", exMsg));
+            MirleLogger.Instance.Log(new LogFormat("MainError", "5", source, "Device", "CarrierID", exMsg));
         }
 
         public bool IsAbortByAgvc()

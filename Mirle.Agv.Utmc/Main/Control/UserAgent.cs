@@ -76,7 +76,7 @@ namespace Mirle.Agv.Utmc.Controller
 
         private void LogException(string classMethodName, string exMsg)
         {
-            mirleLogger.Log(new LogFormat("Error", "5", classMethodName, "Device", "CarrierID", exMsg));
+            mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, "Device", "CarrierID", exMsg));
         }
 
     }

@@ -425,7 +425,7 @@ namespace Mirle.Agv.Utmc.View
 
         private void LogException(string classMethodName, string exMsg)
         {
-            MirleLogger.Instance.Log(new LogFormat("Error", "5", classMethodName, "Device", "CarrierID", exMsg));
+            MirleLogger.Instance.Log(new LogFormat("MainError", "5", classMethodName, "Device", "CarrierID", exMsg));
         }
     }
 }

@@ -14,11 +14,14 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Mirle.Agv.Utmc.Alarms;
 
 namespace Mirle.Agv.Utmc.Controller
 {
     public class MainFlowHandler
     {
+        public string LogConfigPath { get; set; } = "MainLog.ini";
+
         #region TransCmds
         public bool IsOverrideMove { get; set; }
         public bool IsAvoidMove { get; set; }
@@ -30,13 +33,14 @@ namespace Mirle.Agv.Utmc.Controller
 
         public AgvcConnector agvcConnector;
         public MirleLogger mirleLogger = null;
-        public AlarmHandler alarmHandler;
         public MapHandler mapHandler;
-        public UserAgent UserAgent { get; set; } = new UserAgent();
+        public UserAgent UserAgent { get; set; }
         public Robot.IRobotHandler RobotHandler { get; set; }
         public Battery.IBatteryHandler BatteryHandler { get; set; }
         public Move.IMoveHandler MoveHandler { get; set; }
         public ConnectionMode.IConnectionModeHandler ConnectionModeHandler { get; set; }
+
+        public Alarms.IAlarmHandler AlarmHandler { get; set; }
 
         public LocalPackage LocalPackage { get; set; }
 
@@ -79,6 +83,8 @@ namespace Mirle.Agv.Utmc.Controller
         public MainFlowHandler()
         {
             isIniOk = true;
+            MirleLogger.LogConfigPath = LogConfigPath;
+
         }
 
         #region InitialComponents
@@ -98,6 +104,27 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "全部"));
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Start Process Ok.");
+            }
+        }
+        private void LoggersInitial()
+        {
+            try
+            {
+                if (File.Exists(LogConfigPath))
+                {
+                    mirleLogger = MirleLogger.Instance;
+                }
+                else
+                {
+                    throw new Exception();
+                }
+
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "紀錄器"));
+            }
+            catch (Exception)
+            {
+                isIniOk = false;
+                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(false, "紀錄器缺少 Log.ini"));
             }
         }
 
@@ -152,36 +179,13 @@ namespace Mirle.Agv.Utmc.Controller
             return JsonConvert.DeserializeObject<T>(allText);
         }
 
-        private void LoggersInitial()
-        {
-            try
-            {
-                string loggerConfigPath = "Log.ini";
-                if (File.Exists(loggerConfigPath))
-                {
-                    mirleLogger = MirleLogger.Instance;
-                }
-                else
-                {
-                    throw new Exception();
-                }
-
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "紀錄器"));
-            }
-            catch (Exception)
-            {
-                isIniOk = false;
-                OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(false, "紀錄器缺少 Log.ini"));
-            }
-        }
-
         private void ControllersInitial()
         {
             try
             {
-                alarmHandler = new AlarmHandler();
                 mapHandler = new MapHandler();
                 agvcConnector = new AgvcConnector(this);
+                UserAgent = new UserAgent();
 
                 if (Vehicle.MainFlowConfig.IsSimulation)
                 {
@@ -189,6 +193,7 @@ namespace Mirle.Agv.Utmc.Controller
                     BatteryHandler = new Battery.NullObjBatteryHandler(Vehicle.BatteryStatus);
                     MoveHandler = new Move.NullObjMoveHandler(Vehicle.MoveStatus, Vehicle.MapInfo);
                     ConnectionModeHandler = new ConnectionMode.NullObjConnectionModeHandler(Vehicle.AutoState);
+                    AlarmHandler = new Alarms.NullObjAlarmHandler();
 
                     Vehicle.MainFlowConfig.WatchLowPowerSleepTimeMs = 60 * 1000;
                 }
@@ -202,6 +207,7 @@ namespace Mirle.Agv.Utmc.Controller
                     BatteryHandler = new Battery.UtmcBatteryAdapter(LocalPackage);
                     MoveHandler = new Move.UtmcMoveAdapter(LocalPackage);
                     ConnectionModeHandler = new ConnectionMode.UtmcConnectionModeAdapter(LocalPackage);
+                    AlarmHandler = new Alarms.UtmcAlarmAdapter(LocalPackage);
                 }
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "控制層"));
@@ -268,6 +274,10 @@ namespace Mirle.Agv.Utmc.Controller
                 BatteryHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
                 BatteryHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
 
+                AlarmHandler.OnSetAlarmToAgvcEvent += AlarmHandler_OnSetAlarmToAgvcEvent;
+                AlarmHandler.OnResetAlarmToAgvcEvent += AlarmHandler_OnResetAlarmToAgvcEvent;
+                AlarmHandler.OnLogDebugEvent += IMessageHandler_OnLogDebugEvent;
+                AlarmHandler.OnLogErrorEvent += IMessageHandler_OnLogErrorEvent;
 
                 OnComponentIntialDoneEvent?.Invoke(this, new InitialEventArgs(true, "事件"));
             }
@@ -279,6 +289,7 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
+
 
         private void VehicleLocationInitialAndThreadsInitial()
         {
@@ -365,7 +376,7 @@ namespace Mirle.Agv.Utmc.Controller
                         case EnumTransferStep.AvoidMoveComplete:
                             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[避車.到站.回報.完成] AvoidMoveComplete.");
                             AvoidMoveComplete();
-                            break;                      
+                            break;
                         case EnumTransferStep.MoveToAddressWaitEnd:
                             if (Vehicle.MoveStatus.IsMoveEnd)
                             {
@@ -516,7 +527,7 @@ namespace Mirle.Agv.Utmc.Controller
                     }
                     else
                     {
-                        SetAlarmFromAgvm(58);
+                        AlarmHandler.SetAlarmFromAgvm(58);
                         Thread.Sleep(3000);
                         if (endReference == EnumMoveToEndReference.Avoid)
                         {
@@ -591,7 +602,7 @@ namespace Mirle.Agv.Utmc.Controller
                         LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[移動.失敗] : Move Fail. ");
                     }
 
-                    SetAlarmFromAgvm(6);
+                    AlarmHandler.SetAlarmFromAgvm(6);
                     agvcConnector.StatusChangeReport();
 
                     StopClearAndReset();
@@ -752,7 +763,7 @@ namespace Mirle.Agv.Utmc.Controller
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[設定.路線.失敗] Setup MovingGuide Fail.");
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
                 Vehicle.MovingGuide.MovingSections = new List<MapSection>();
-                SetAlarmFromAgvm(18);
+                AlarmHandler.SetAlarmFromAgvm(18);
                 StopClearAndReset();
             }
         }
@@ -940,7 +951,7 @@ namespace Mirle.Agv.Utmc.Controller
                     if ((DateTime.Now - LastIdlePosition.TimeStamp).TotalMilliseconds >= Vehicle.MainFlowConfig.IdleReportIntervalMs)
                     {
                         UpdateLastIdlePositionAndTimeStamp(positionArgs);
-                        SetAlarmFromAgvm(55);
+                        AlarmHandler.SetAlarmFromAgvm(55);
                     }
                 }
                 else
@@ -1153,7 +1164,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 //    Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
                                 //}
 
-                                SetAlarmFromAgvm(000051);
+                                AlarmHandler.SetAlarmFromAgvm(000051);
                                 return;
                             }
                         default:
@@ -1181,7 +1192,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 //    Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
                                 //}
 
-                                SetAlarmFromAgvm(000051);
+                                AlarmHandler.SetAlarmFromAgvm(000051);
                             }
                             break;
                         case EnumCarrierSlotState.Loading:
@@ -1211,7 +1222,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 //    Vehicle.RightReadResult = BCRReadResult.BcrMisMatch;
                                 //}
 
-                                SetAlarmFromAgvm(000028);
+                                AlarmHandler.SetAlarmFromAgvm(000028);
                             }
                             break;
                         case EnumCarrierSlotState.ReadFail:
@@ -1231,7 +1242,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 //    Vehicle.CarrierSlotRight = slotStatus;
                                 //    Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
                                 //}
-                                SetAlarmFromAgvm(000004);
+                                AlarmHandler.SetAlarmFromAgvm(000004);
                             }
                             break;
                         case EnumCarrierSlotState.PositionError:
@@ -1252,7 +1263,7 @@ namespace Mirle.Agv.Utmc.Controller
                                 //    Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
                                 //}
 
-                                SetAlarmFromAgvm(000051);
+                                AlarmHandler.SetAlarmFromAgvm(000051);
                                 return;
                             }
                         default:
@@ -1447,7 +1458,7 @@ namespace Mirle.Agv.Utmc.Controller
                         {
                             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[放貨前.檢查.失敗] Pre Unload Check Fail. Slot is Empty.");
 
-                            SetAlarmFromAgvm(000017);
+                            AlarmHandler.SetAlarmFromAgvm(000017);
                             return;
                         }
                         break;
@@ -1551,7 +1562,7 @@ namespace Mirle.Agv.Utmc.Controller
                     case EnumCarrierSlotState.PositionError:
                         {
                             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[放貨.失敗.凸片] : PositionError.");
-                            SetAlarmFromAgvm(51);
+                            AlarmHandler.SetAlarmFromAgvm(51);
                             Vehicle.TransferCommand.EnrouteState = CommandState.None;
                             Vehicle.TransferCommand.TransferStep = EnumTransferStep.RobotFail;
                         }
@@ -1664,7 +1675,7 @@ namespace Mirle.Agv.Utmc.Controller
                 if (IsStopChargTimeoutInRobotStep)
                 {
                     IsStopChargTimeoutInRobotStep = false;
-                    SetAlarmFromAgvm(14);
+                    AlarmHandler.SetAlarmFromAgvm(14);
                 }
 
                 switch (robotEndType)
@@ -1679,7 +1690,7 @@ namespace Mirle.Agv.Utmc.Controller
                     case EnumRobotEndType.InterlockError:
                         {
                             LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "[手臂.交握.失敗] AseRobotControl_OnRobotInterlockErrorEvent");
-                            ResetAllAlarmsFromAgvm();
+                            AlarmHandler.ResetAllAlarmsFromAgvm();
 
                             Vehicle.TransferCommand.CompleteStatus = CompleteStatus.CmpStatusInterlockError;
                             Vehicle.TransferCommand.IsStopAndClear = true;
@@ -1745,9 +1756,9 @@ namespace Mirle.Agv.Utmc.Controller
 
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[命令.結束] TransferComplete. [CommandId = {Vehicle.TransferCommand.CommandId}][CompleteStatus = {Vehicle.TransferCommand.CompleteStatus}]");
 
-                if (!alarmHandler.dicHappeningAlarms.IsEmpty)
+                if (AlarmHandler.HasHappeningAlarm())
                 {
-                    ResetAllAlarmsFromAgvm();
+                    AlarmHandler.ResetAllAlarmsFromAgvm();
                 }
                 Vehicle.mapTransferCommands.TryRemove(Vehicle.TransferCommand.CommandId, out AgvcTransferCommand transferCommand);
                 agvcConnector.TransferComplete(transferCommand);
@@ -2425,7 +2436,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                SetAlarmFromAgvm(alarmCode);
+                AlarmHandler.SetAlarmFromAgvm(alarmCode);
                 agvcConnector.ReplyAvoidCommand(aseMovingGuide.SeqNum, 1, reason);
                 LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, string.Concat($"MainFlow : Reject Avoid Command, ", reason));
                 agvcConnector.ResumeAskReserve();
@@ -2533,7 +2544,7 @@ namespace Mirle.Agv.Utmc.Controller
                     else
                     {
                         Vehicle.IsCharging = false;
-                        SetAlarmFromAgvm(000013);
+                        AlarmHandler.SetAlarmFromAgvm(000013);
                         BatteryHandler.GetBatteryAndChargeStatus();
 
                         SpinWait.SpinUntil(() => false, 500);
@@ -2620,7 +2631,7 @@ namespace Mirle.Agv.Utmc.Controller
                     else
                     {
                         Vehicle.IsCharging = false;
-                        SetAlarmFromAgvm(000013);
+                        AlarmHandler.SetAlarmFromAgvm(000013);
                         BatteryHandler.GetBatteryAndChargeStatus();
 
                         SpinWait.SpinUntil(() => false, 500);
@@ -2683,7 +2694,7 @@ namespace Mirle.Agv.Utmc.Controller
                         }
                         else
                         {
-                            SetAlarmFromAgvm(000014);
+                            AlarmHandler.SetAlarmFromAgvm(000014);
                         }
                     }
                 }
@@ -3007,8 +3018,11 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                SetAlarmFromAgvm(56);
-                ConnectionModeHandler.AgvcDisconnect();
+                if (AlarmHandler != null)
+                {
+                    AlarmHandler.SetAlarmFromAgvm(56);
+                    ConnectionModeHandler.AgvcDisconnect();
+                }
             }
             catch (Exception ex)
             {
@@ -3034,13 +3048,11 @@ namespace Mirle.Agv.Utmc.Controller
                         {
                             case EnumAutoState.Auto:
                                 GetAllStatusReport();
-                                ResetAllAlarmsFromAgvm();
-                                //CheckCanAuto();
+                                AlarmHandler.ResetAllAlarmsFromAgvm();
                                 UpdateSlotStatus();
                                 Vehicle.MoveStatus.IsMoveEnd = false;
                                 break;
                             case EnumAutoState.Manual:
-                                //ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                                 break;
                             case EnumAutoState.None:
                                 break;
@@ -3059,7 +3071,7 @@ namespace Mirle.Agv.Utmc.Controller
             {
                 if (autoState == EnumAutoState.Auto)
                 {
-                    SetAlarmFromAgvm(31);
+                    AlarmHandler.SetAlarmFromAgvm(31);
                     ConnectionModeHandler.SetAutoState(EnumAutoState.Manual);
                 }
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
@@ -3087,7 +3099,7 @@ namespace Mirle.Agv.Utmc.Controller
             }
             else if (Vehicle.MoveStatus.LastAddress.MyDistance(Vehicle.MoveStatus.LastMapPosition) >= Vehicle.MainFlowConfig.InitialPositionRangeMm)
             {
-                SetAlarmFromAgvm(54);
+                AlarmHandler.SetAlarmFromAgvm(54);
                 CanAutoMsg = $"Initial Positon Too Far.";
                 throw new Exception($"CheckCanAuto fail. {CanAutoMsg}");
             }
@@ -3140,8 +3152,7 @@ namespace Mirle.Agv.Utmc.Controller
                         break;
                     case EnumCarrierSlotState.PositionError:
                         {
-                            SetAlarmFromAgvm(51);
-                            // AsePackage_OnModeChangeEvent(this, EnumAutoState.Manual);
+                            AlarmHandler.SetAlarmFromAgvm(51);
                         }
                         return;
                     case EnumCarrierSlotState.ReadFail:
@@ -3156,50 +3167,6 @@ namespace Mirle.Agv.Utmc.Controller
                         break;
                 }
 
-                //CarrierSlotStatus rightSlotStatus = new CarrierSlotStatus(Vehicle.CarrierSlotRight);
-
-                //switch (rightSlotStatus.EnumCarrierSlotState)
-                //{
-                //    case EnumCarrierSlotState.Empty:
-                //        {
-                //            rightSlotStatus.CarrierId = "";
-                //            rightSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.Empty;
-                //            Vehicle.CarrierSlotRight = rightSlotStatus;
-                //            Vehicle.RightReadResult = BCRReadResult.BcrNormal;
-                //        }
-                //        break;
-                //    case EnumCarrierSlotState.Loading:
-                //        {
-                //            if (string.IsNullOrEmpty(rightSlotStatus.CarrierId.Trim()))
-                //            {
-                //                rightSlotStatus.CarrierId = "ReadFail";
-                //                rightSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
-                //                Vehicle.CarrierSlotRight = rightSlotStatus;
-                //                Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
-                //            }
-                //            else
-                //            {
-                //                Vehicle.RightReadResult = BCRReadResult.BcrNormal;
-                //            }
-                //        }
-                //        break;
-                //    case EnumCarrierSlotState.PositionError:
-                //        {
-                //            SetAlarmFromAgvm(51);
-                //            // AsePackage_OnModeChangeEvent(this, EnumAutoState.Manual);
-                //        }
-                //        return;
-                //    case EnumCarrierSlotState.ReadFail:
-                //        {
-                //            rightSlotStatus.CarrierId = "ReadFail";
-                //            rightSlotStatus.EnumCarrierSlotState = EnumCarrierSlotState.ReadFail;
-                //            Vehicle.CarrierSlotRight = rightSlotStatus;
-                //            Vehicle.RightReadResult = BCRReadResult.BcrReadFail;
-                //        }
-                //        break;
-                //    default:
-                //        break;
-                //}
 
                 agvcConnector.CSTStatusReport(); //200625 dabid#
             }
@@ -3213,47 +3180,14 @@ namespace Mirle.Agv.Utmc.Controller
 
         #region Set / Reset Alarm
 
-        public void SetAlarmFromAgvm(int errorCode)
+        private void AlarmHandler_OnResetAlarmToAgvcEvent(object sender, EventArgs e)
         {
-            if (!alarmHandler.dicHappeningAlarms.ContainsKey(errorCode))
-            {
-                alarmHandler.SetAlarm(errorCode);
-                //localPackage.SetAlarmCode(errorCode, true);
-                var IsAlarm = alarmHandler.IsAlarm(errorCode);
-
-                agvcConnector.SetlAlarmToAgvc(errorCode, IsAlarm);
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, alarmHandler.GetAlarmText(errorCode));
-            }
-        }
-
-        public void SetAlarmFromAgvl(int errorCode)
-        {
-            if (!alarmHandler.dicHappeningAlarms.ContainsKey(errorCode))
-            {
-                alarmHandler.SetAlarm(errorCode);
-                var IsAlarm = alarmHandler.IsAlarm(errorCode);
-                agvcConnector.SetlAlarmToAgvc(errorCode, IsAlarm);
-                LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, alarmHandler.GetAlarmText(errorCode));
-            }
-        }
-
-        public void ResetAllAlarmsFromAgvm()
-        {
-            alarmHandler.ResetAllAlarms();
-            //localPackage.ResetAllAlarmCode();
             agvcConnector.ResetAllAlarmsToAgvc();
         }
 
-        public void ResetAllAlarmsFromAgvc()
+        private void AlarmHandler_OnSetAlarmToAgvcEvent(object sender, Alarms.AgvcAlarmArgs e)
         {
-            alarmHandler.ResetAllAlarms();
-            //localPackage.ResetAllAlarmCode();
-        }
-
-        public void ResetAllAlarmsFromAgvl()
-        {
-            alarmHandler.ResetAllAlarms();
-            agvcConnector.ResetAllAlarmsToAgvc();
+            agvcConnector.SetlAlarmToAgvc(e.ErrorCode, e.IsAlarm);
         }
 
         #endregion
@@ -3294,7 +3228,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Error", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
+                mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
             }
             catch (Exception) { }
         }
@@ -3303,7 +3237,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Debug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
+                mirleLogger.Log(new LogFormat("MainDebug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
                 AppendDebugLog(msg);
             }
             catch (Exception) { }

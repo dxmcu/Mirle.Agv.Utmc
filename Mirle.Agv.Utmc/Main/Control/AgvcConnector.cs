@@ -1261,7 +1261,6 @@ namespace Mirle.Agv.Utmc.Controller
                 LogException(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, ex.Message);
             }
         }
-
         private string[] StringSpilter(string v)
         {
             v = v.Trim(new char[] { ' ', '[', ']' });
@@ -1468,7 +1467,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             ID_91_ALARM_RESET_REQUEST receive = (ID_91_ALARM_RESET_REQUEST)e.objPacket;
 
-            mainFlowHandler.ResetAllAlarmsFromAgvc();
+            mainFlowHandler.AlarmHandler.ResetAllAlarmsFromAgvc(); 
 
             int replyCode = 0;
             Send_Cmd191_AlarmResetResponse(e.iSeqNum, replyCode);
@@ -1847,7 +1846,7 @@ namespace Mirle.Agv.Utmc.Controller
                 if (receive.ActType == CMDCancelType.CmdEms)
                 {
                     Send_Cmd137_TransferCancelResponse(e.iSeqNum, (int)EnumAgvcReplyCode.Accept, receive);
-                    mainFlowHandler.SetAlarmFromAgvm(000037);
+                    mainFlowHandler.AlarmHandler.SetAlarmFromAgvm(000037);
                     mainFlowHandler.StopClearAndReset();
                     return;
                 }
@@ -1977,7 +1976,7 @@ namespace Mirle.Agv.Utmc.Controller
                             {
                                 mainFlowHandler.LogDebug(GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, $"[取貨階段.Bcrread.上報.失敗.放棄命令] Load fail, [ReplyActiveType = {response.ReplyActiveType}][RenameCarrierID = {response.RenameCarrierID}]");
 
-                                mainFlowHandler.ResetAllAlarmsFromAgvm();
+                                mainFlowHandler.AlarmHandler.ResetAllAlarmsFromAgvm();
                                 var cmd = Vehicle.TransferCommand;
                                 if (!string.IsNullOrEmpty(response.RenameCarrierID))
                                 {
@@ -2204,7 +2203,7 @@ namespace Mirle.Agv.Utmc.Controller
                 report.DirectionAngle = Vehicle.MoveStatus.MovingDirection;
                 report.VehicleAngle = Vehicle.MoveStatus.HeadDirection;
 
-                mirleLogger.Log(new LogFormat("Info", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID", $"Angle=[{aseMoveStatus.MovingDirection}]"));
+                mirleLogger.Log(new LogFormat("MainInfo", "5", GetType().Name + ":" + MethodBase.GetCurrentMethod().Name, "Device", "CarrierID", $"Angle=[{aseMoveStatus.MovingDirection}]"));
 
                 WrapperMessage wrapper = new WrapperMessage();
                 wrapper.ID = WrapperMessage.TransEventRepFieldNumber;
@@ -2496,7 +2495,7 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Error", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
+                mirleLogger.Log(new LogFormat("MainError", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", exMsg));
             }
             catch (Exception) { }
         }
@@ -2505,19 +2504,19 @@ namespace Mirle.Agv.Utmc.Controller
         {
             try
             {
-                mirleLogger.Log(new LogFormat("Debug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
+                mirleLogger.Log(new LogFormat("MainDebug", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
             }
             catch (Exception) { }
         }
 
         private void LogComm(string classMethodName, string msg)
         {
-            mirleLogger.Log(new LogFormat("Comm", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
+            mirleLogger.Log(new LogFormat("MainComm", "5", classMethodName, Vehicle.AgvcConnectorConfig.ClientName, "CarrierID", msg));
         }
 
         public void LogCommandList(string msg)
         {
-            mirleLogger.LogString("CommandList", msg);
+            mirleLogger.LogString("MainCommandList", msg);
         }
 
         public void LogCommandStart(ID_31_TRANS_REQUEST request)
