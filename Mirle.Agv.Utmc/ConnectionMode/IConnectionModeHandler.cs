@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.ConnectionMode
 {
-    public interface IConnectionModeHandler : Tools.IMessageHandler
+    interface IConnectionModeHandler : Tools.IMessageHandler
     {
-        public event EventHandler<EnumAutoState> OnModeChangeEvent;
+        event EventHandler<EnumAutoState> OnModeChangeEvent;
 
-        public void AgvcDisconnect();
+        void AgvcDisconnect();
 
-        public void SetAutoState(EnumAutoState autoState);
+        void SetAutoState(EnumAutoState autoState);
     }
 }

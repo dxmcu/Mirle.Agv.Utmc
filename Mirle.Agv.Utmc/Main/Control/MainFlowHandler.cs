@@ -35,12 +35,12 @@ namespace Mirle.Agv.Utmc.Controller
         public MirleLogger mirleLogger = null;
         public MapHandler mapHandler;
         public UserAgent UserAgent { get; set; }
-        public Robot.IRobotHandler RobotHandler { get; set; }
-        public Battery.IBatteryHandler BatteryHandler { get; set; }
-        public Move.IMoveHandler MoveHandler { get; set; }
-        public ConnectionMode.IConnectionModeHandler ConnectionModeHandler { get; set; }
+        internal Robot.IRobotHandler RobotHandler { get; set; }
+        internal Battery.IBatteryHandler BatteryHandler { get; set; }
+        internal Move.IMoveHandler MoveHandler { get; set; }
+        internal ConnectionMode.IConnectionModeHandler ConnectionModeHandler { get; set; }
 
-        public Alarms.IAlarmHandler AlarmHandler { get; set; }
+        internal Alarms.IAlarmHandler AlarmHandler { get; set; }
 
         public LocalPackage LocalPackage { get; set; }
 

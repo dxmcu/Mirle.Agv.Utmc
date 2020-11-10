@@ -30,7 +30,7 @@ namespace Mirle.Agv.Utmc.Move
         {
             this.MoveStatus = moveStatus;
             this.MapInfo = mapInfo;
-            moveStatus.LastMapPosition = MapInfo.addressMap.First().Value.Position;
+            MoveStatus.LastMapPosition = MapInfo.addressMap.First().Value.Position;
             FakeMoveArrivalQueue = new ConcurrentQueue<PositionArgs>();
             IsFakeMoveEnginePause = false;
             FakeMoveEngineTask = new Task(FakeMoveEngine);
@@ -132,7 +132,7 @@ namespace Mirle.Agv.Utmc.Move
             {
                 if (IsFakeMoveEnginePause)
                 {
-                    SpinWait.SpinUntil(() => IsFakeMoveEnginePause, 1000);
+                    SpinWait.SpinUntil(() => !IsFakeMoveEnginePause, 1000);
                     continue;
                 }
 

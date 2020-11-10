@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Robot
 {
-    public interface IRobotHandler : IMessageHandler
+     interface IRobotHandler : IMessageHandler
     {
-        public event EventHandler<Model.CarrierSlotStatus> OnUpdateCarrierSlotStatusEvent;
-        public event EventHandler<Model.RobotStatus> OnUpdateRobotStatusEvent;
-        public event EventHandler<EnumRobotEndType> OnRobotEndEvent;
+         event EventHandler<Model.CarrierSlotStatus> OnUpdateCarrierSlotStatusEvent;
+         event EventHandler<Model.RobotStatus> OnUpdateRobotStatusEvent;
+         event EventHandler<EnumRobotEndType> OnRobotEndEvent;
 
-        public void DoRobotCommandFor(Model.TransferSteps.RobotCommand robotCommand);
-        public void ClearRobotCommand();
-        public void GetRobotAndCarrierSlotStatus();
-        public void SetCarrierSlotStatusTo(Model.CarrierSlotStatus carrierSlotStatus);
+         void DoRobotCommandFor(Model.TransferSteps.RobotCommand robotCommand);
+         void ClearRobotCommand();
+         void GetRobotAndCarrierSlotStatus();
+         void SetCarrierSlotStatusTo(Model.CarrierSlotStatus carrierSlotStatus);
     }
 }

@@ -8,21 +8,21 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Move
 {
-    public interface IMoveHandler : Tools.IMessageHandler
+    interface IMoveHandler : Tools.IMessageHandler
     {
-        public event EventHandler<Model.MoveStatus> OnUpdateMoveStatusEvent;
+        event EventHandler<Model.MoveStatus> OnUpdateMoveStatusEvent;
 
-        public event EventHandler<Model.PositionArgs> OnUpdatePositionArgsEvent;
+        event EventHandler<Model.PositionArgs> OnUpdatePositionArgsEvent;
 
-        public event EventHandler<bool> OnOpPauseOrResumeEvent;
+        event EventHandler<bool> OnOpPauseOrResumeEvent;
 
-        public void SetMovingGuide(Model.MovingGuide movingGuide);
-        public void ReserveOkPartMove(Model.MapSection mapSection);
-        public void StopMove();
-        public void PauseMove();
-        public void ResumeMove();
-        public void GetMoveStatus();
-        public void SetMoveStatusFrom(MoveStatus moveStatus);
-        public void InitialPosition();       
+        void SetMovingGuide(Model.MovingGuide movingGuide);
+        void ReserveOkPartMove(Model.MapSection mapSection);
+        void StopMove();
+        void PauseMove();
+        void ResumeMove();
+        void GetMoveStatus();
+        void SetMoveStatusFrom(MoveStatus moveStatus);
+        void InitialPosition();
     }
 }

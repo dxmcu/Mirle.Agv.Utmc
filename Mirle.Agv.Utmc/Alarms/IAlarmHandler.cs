@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Alarms
 {
-    public interface IAlarmHandler : Tools.IMessageHandler
+    interface IAlarmHandler : Tools.IMessageHandler
     {
-        public event EventHandler<AgvcAlarmArgs> OnSetAlarmToAgvcEvent;
-        public event EventHandler OnResetAlarmToAgvcEvent;
+        event EventHandler<AgvcAlarmArgs> OnSetAlarmToAgvcEvent;
+        event EventHandler OnResetAlarmToAgvcEvent;
 
-        public void SetAlarmFromAgvm(int errorCode);
-        public void ResetAllAlarmsFromAgvm();
-        public void ResetAllAlarmsFromAgvc();
-        public string GetLastAlarmMsg();
-        public string GetAlarmLogMsg();
-        public string GetAlarmHistoryLogMsg();
-        public bool HasHappeningAlarm();       
+        void SetAlarmFromAgvm(int errorCode);
+        void ResetAllAlarmsFromAgvm();
+        void ResetAllAlarmsFromAgvc();
+        string GetLastAlarmMsg();
+        string GetAlarmLogMsg();
+        string GetAlarmHistoryLogMsg();
+        bool HasHappeningAlarm();
     }
 }

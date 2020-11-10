@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Mirle.Agv.Utmc.Tools
 {
-    public interface IMessageHandler
+    interface IMessageHandler
     {
-        public event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
-        public event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
+        event EventHandler<MessageHandlerArgs> OnLogDebugEvent;
+        event EventHandler<MessageHandlerArgs> OnLogErrorEvent;
     }
 }
